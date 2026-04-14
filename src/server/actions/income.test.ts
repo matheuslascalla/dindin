@@ -25,6 +25,7 @@ jest.mock('@/lib/context', () => ({
 }));
 
 const db = prisma.income as jest.Mocked<typeof prisma.income>;
+const FILTER = { userId: 'user-test', houseId: null };
 
 beforeEach(() => jest.clearAllMocks());
 
@@ -44,7 +45,7 @@ describe('createIncome', () => {
 
     const result = await createIncome(validIncome);
 
-    expect(db.create).toHaveBeenCalledWith({ data: validIncome });
+    expect(db.create).toHaveBeenCalledWith({ data: { ...validIncome, ...FILTER } });
     expect(revalidatePath).toHaveBeenCalledWith('/rendas');
     expect(revalidatePath).toHaveBeenCalledWith('/dashboard');
     expect(result).toEqual(createdIncome);
@@ -58,7 +59,7 @@ describe('updateIncome', () => {
     await updateIncome('inc-1', { active: false });
 
     expect(db.update).toHaveBeenCalledWith({
-      where: { id: 'inc-1' },
+      where: { id: 'inc-1', ...FILTER },
       data: { active: false },
     });
     expect(revalidatePath).toHaveBeenCalledWith('/rendas');
@@ -72,7 +73,7 @@ describe('deleteIncome', () => {
 
     await deleteIncome('inc-1');
 
-    expect(db.delete).toHaveBeenCalledWith({ where: { id: 'inc-1' } });
+    expect(db.delete).toHaveBeenCalledWith({ where: { id: 'inc-1', ...FILTER } });
     expect(revalidatePath).toHaveBeenCalledWith('/rendas');
     expect(revalidatePath).toHaveBeenCalledWith('/dashboard');
   });
@@ -85,7 +86,7 @@ describe('listIncomes', () => {
     const result = await listIncomes();
 
     expect(db.findMany).toHaveBeenCalledWith({
-      where: {},
+      where: { ...FILTER },
       orderBy: { createdAt: 'desc' },
     });
     expect(result).toEqual([createdIncome]);
@@ -97,7 +98,7 @@ describe('listIncomes', () => {
     await listIncomes({ active: true });
 
     expect(db.findMany).toHaveBeenCalledWith({
-      where: { active: true },
+      where: { ...FILTER, active: true },
       orderBy: { createdAt: 'desc' },
     });
   });
@@ -108,7 +109,7 @@ describe('listIncomes', () => {
     await listIncomes({ recurrence: 'monthly' });
 
     expect(db.findMany).toHaveBeenCalledWith({
-      where: { recurrence: 'monthly' },
+      where: { ...FILTER, recurrence: 'monthly' },
       orderBy: { createdAt: 'desc' },
     });
   });
@@ -119,7 +120,7 @@ describe('listIncomes', () => {
     await listIncomes({ active: false, recurrence: 'eventual' });
 
     expect(db.findMany).toHaveBeenCalledWith({
-      where: { active: false, recurrence: 'eventual' },
+      where: { ...FILTER, active: false, recurrence: 'eventual' },
       orderBy: { createdAt: 'desc' },
     });
   });
@@ -133,7 +134,7 @@ describe('getTotalMonthlyIncome', () => {
 
     expect(db.aggregate).toHaveBeenCalledWith({
       _sum: { value: true },
-      where: { active: true, recurrence: 'monthly' },
+      where: { ...FILTER, active: true, recurrence: 'monthly' },
     });
     expect(result).toBe(8000);
   });

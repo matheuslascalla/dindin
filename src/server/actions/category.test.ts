@@ -26,6 +26,8 @@ const db = prisma as unknown as {
   cardExpense: jest.Mocked<typeof prisma.cardExpense>;
 };
 
+const FILTER = { userId: 'user-test', houseId: null };
+
 beforeEach(() => jest.clearAllMocks());
 
 const validCategory = {
@@ -43,7 +45,7 @@ describe('createCategory', () => {
 
     const result = await createCategory(validCategory);
 
-    expect(db.expenseType.create).toHaveBeenCalledWith({ data: validCategory });
+    expect(db.expenseType.create).toHaveBeenCalledWith({ data: { ...validCategory, ...FILTER } });
     expect(revalidatePath).toHaveBeenCalledWith('/categorias');
     expect(result).toEqual(createdCategory);
   });
@@ -57,7 +59,7 @@ describe('updateCategory', () => {
     await updateCategory('cat-1', { name: 'Alimentação Atualizada' });
 
     expect(db.expenseType.update).toHaveBeenCalledWith({
-      where: { id: 'cat-1' },
+      where: { id: 'cat-1', ...FILTER },
       data: { name: 'Alimentação Atualizada' },
     });
     expect(revalidatePath).toHaveBeenCalledWith('/categorias');
@@ -74,7 +76,7 @@ describe('deleteCategory', () => {
 
     await deleteCategory('cat-1');
 
-    expect(db.expenseType.delete).toHaveBeenCalledWith({ where: { id: 'cat-1' } });
+    expect(db.expenseType.delete).toHaveBeenCalledWith({ where: { id: 'cat-1', ...FILTER } });
     expect(revalidatePath).toHaveBeenCalledWith('/categorias');
     expect(revalidatePath).toHaveBeenCalledWith('/dashboard');
   });
@@ -110,7 +112,10 @@ describe('listCategories', () => {
 
     const result = await listCategories();
 
-    expect(db.expenseType.findMany).toHaveBeenCalledWith({ orderBy: { name: 'asc' } });
+    expect(db.expenseType.findMany).toHaveBeenCalledWith({
+      where: { ...FILTER },
+      orderBy: { name: 'asc' },
+    });
     expect(result).toEqual(categories);
   });
 });

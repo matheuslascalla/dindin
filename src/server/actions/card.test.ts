@@ -14,6 +14,7 @@ import {
 import { cardExpenseMonthFilter, utcStartOfMonth, utcEndOfMonth } from '@/lib/utils';
 
 const MOCK_UUID = 'mock-uuid-1234';
+const FILTER = { userId: 'user-test', houseId: null };
 
 jest.mock('@/lib/prisma', () => ({
   prisma: {
@@ -22,6 +23,7 @@ jest.mock('@/lib/prisma', () => ({
       update: jest.fn(),
       delete: jest.fn(),
       findMany: jest.fn(),
+      findFirst: jest.fn(),
     },
     cardExpense: {
       create: jest.fn(),
@@ -30,6 +32,7 @@ jest.mock('@/lib/prisma', () => ({
       delete: jest.fn(),
       deleteMany: jest.fn(),
       findMany: jest.fn(),
+      findFirst: jest.fn(),
       aggregate: jest.fn(),
     },
   },
@@ -66,7 +69,7 @@ describe('createCard', () => {
 
     const result = await createCard(validCard);
 
-    expect(cardDb.create).toHaveBeenCalledWith({ data: validCard });
+    expect(cardDb.create).toHaveBeenCalledWith({ data: { ...validCard, ...FILTER } });
     expect(revalidatePath).toHaveBeenCalledWith('/cartoes');
     expect(result).toEqual(createdCard);
   });
@@ -79,7 +82,7 @@ describe('updateCard', () => {
     await updateCard('card-1', { name: 'Inter' });
 
     expect(cardDb.update).toHaveBeenCalledWith({
-      where: { id: 'card-1' },
+      where: { id: 'card-1', ...FILTER },
       data: { name: 'Inter' },
     });
     expect(revalidatePath).toHaveBeenCalledWith('/cartoes');
@@ -92,7 +95,7 @@ describe('deleteCard', () => {
 
     await deleteCard('card-1');
 
-    expect(cardDb.delete).toHaveBeenCalledWith({ where: { id: 'card-1' } });
+    expect(cardDb.delete).toHaveBeenCalledWith({ where: { id: 'card-1', ...FILTER } });
     expect(revalidatePath).toHaveBeenCalledWith('/cartoes');
     expect(revalidatePath).toHaveBeenCalledWith('/dashboard');
   });
@@ -106,6 +109,7 @@ describe('listCards', () => {
     const result = await listCards();
 
     expect(cardDb.findMany).toHaveBeenCalledWith({
+      where: { ...FILTER },
       include: { _count: { select: { expenses: true } } },
       orderBy: { createdAt: 'desc' },
     });
@@ -114,11 +118,19 @@ describe('listCards', () => {
 });
 
 describe('createCardExpense', () => {
+  beforeEach(() => {
+    // createCardExpense verifies card ownership before creating
+    (cardDb.findFirst as jest.Mock).mockResolvedValue(createdCard);
+  });
+
   it('creates a one-off expense (kind=none)', async () => {
     (expenseDb.create as jest.Mock).mockResolvedValue({});
 
     await createCardExpense(baseExpenseInput);
 
+    expect(cardDb.findFirst).toHaveBeenCalledWith({
+      where: { id: 'card-1', ...FILTER },
+    });
     expect(expenseDb.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ recurrence: 'none', cardId: 'card-1' }),
     });
@@ -180,14 +192,24 @@ describe('createCardExpense', () => {
     const { data } = (expenseDb.create as jest.Mock).mock.calls[0][0];
     expect(data.description).toBeNull();
   });
+
+  it('throws when card does not belong to the context', async () => {
+    (cardDb.findFirst as jest.Mock).mockResolvedValue(null);
+
+    await expect(createCardExpense(baseExpenseInput)).rejects.toThrow('Cartão não encontrado.');
+  });
 });
 
 describe('updateCardExpense', () => {
   it('updates expense and revalidates /cartoes and /dashboard', async () => {
+    (expenseDb.findFirst as jest.Mock).mockResolvedValue({ id: 'exp-1' });
     (expenseDb.update as jest.Mock).mockResolvedValue({});
 
     await updateCardExpense('exp-1', { value: 200 });
 
+    expect(expenseDb.findFirst).toHaveBeenCalledWith({
+      where: { id: 'exp-1', card: FILTER },
+    });
     expect(expenseDb.update).toHaveBeenCalledWith({
       where: { id: 'exp-1' },
       data: { value: 200 },
@@ -196,17 +218,33 @@ describe('updateCardExpense', () => {
     expect(revalidatePath).toHaveBeenCalledWith('/cartoes');
     expect(revalidatePath).toHaveBeenCalledWith('/dashboard');
   });
+
+  it('throws when expense does not belong to the context', async () => {
+    (expenseDb.findFirst as jest.Mock).mockResolvedValue(null);
+
+    await expect(updateCardExpense('exp-1', { value: 200 })).rejects.toThrow(
+      'Gasto não encontrado.'
+    );
+  });
 });
 
 describe('deleteCardExpense', () => {
   it('deletes a single expense and revalidates', async () => {
-    (expenseDb.delete as jest.Mock).mockResolvedValue({});
+    (expenseDb.deleteMany as jest.Mock).mockResolvedValue({ count: 1 });
 
     await deleteCardExpense('exp-1');
 
-    expect(expenseDb.delete).toHaveBeenCalledWith({ where: { id: 'exp-1' } });
+    expect(expenseDb.deleteMany).toHaveBeenCalledWith({
+      where: { id: 'exp-1', card: FILTER },
+    });
     expect(revalidatePath).toHaveBeenCalledWith('/cartoes');
     expect(revalidatePath).toHaveBeenCalledWith('/dashboard');
+  });
+
+  it('throws when expense does not belong to the context', async () => {
+    (expenseDb.deleteMany as jest.Mock).mockResolvedValue({ count: 0 });
+
+    await expect(deleteCardExpense('exp-1')).rejects.toThrow('Gasto não encontrado.');
   });
 });
 
@@ -217,7 +255,7 @@ describe('deleteInstallmentGroup', () => {
     await deleteInstallmentGroup('group-abc');
 
     expect(expenseDb.deleteMany).toHaveBeenCalledWith({
-      where: { installmentGroupId: 'group-abc' },
+      where: { installmentGroupId: 'group-abc', card: FILTER },
     });
     expect(revalidatePath).toHaveBeenCalledWith('/cartoes');
     expect(revalidatePath).toHaveBeenCalledWith('/dashboard');
@@ -231,7 +269,7 @@ describe('listCardExpenses', () => {
     await listCardExpenses('card-1');
 
     expect(expenseDb.findMany).toHaveBeenCalledWith({
-      where: { cardId: 'card-1' },
+      where: { cardId: 'card-1', card: FILTER },
       include: { expenseType: true },
       orderBy: { date: 'desc' },
     });
@@ -245,7 +283,7 @@ describe('listCardExpenses', () => {
     await listCardExpenses('card-1', month);
 
     expect(expenseDb.findMany).toHaveBeenCalledWith({
-      where: { cardId: 'card-1', ...filter },
+      where: { cardId: 'card-1', card: FILTER, ...filter },
       include: { expenseType: true },
       orderBy: { date: 'desc' },
     });

@@ -26,6 +26,7 @@ jest.mock('@/lib/context', () => ({
 }));
 
 const db = prisma.expense as jest.Mocked<typeof prisma.expense>;
+const FILTER = { userId: 'user-test', houseId: null };
 
 beforeEach(() => jest.clearAllMocks());
 
@@ -50,7 +51,7 @@ describe('createExpense', () => {
     const result = await createExpense(validExpense);
 
     expect(db.create).toHaveBeenCalledWith({
-      data: validExpense,
+      data: { ...validExpense, ...FILTER },
       include: { expenseType: true },
     });
     expect(revalidatePath).toHaveBeenCalledWith('/gastos');
@@ -66,7 +67,7 @@ describe('updateExpense', () => {
     await updateExpense('exp-1', { value: 200 });
 
     expect(db.update).toHaveBeenCalledWith({
-      where: { id: 'exp-1' },
+      where: { id: 'exp-1', ...FILTER },
       data: { value: 200 },
       include: { expenseType: true },
     });
@@ -81,7 +82,7 @@ describe('deleteExpense', () => {
 
     await deleteExpense('exp-1');
 
-    expect(db.delete).toHaveBeenCalledWith({ where: { id: 'exp-1' } });
+    expect(db.delete).toHaveBeenCalledWith({ where: { id: 'exp-1', ...FILTER } });
     expect(revalidatePath).toHaveBeenCalledWith('/gastos');
     expect(revalidatePath).toHaveBeenCalledWith('/dashboard');
   });
@@ -94,7 +95,7 @@ describe('listExpenses', () => {
     const result = await listExpenses();
 
     expect(db.findMany).toHaveBeenCalledWith({
-      where: {},
+      where: { ...FILTER },
       include: { expenseType: true },
       orderBy: { date: 'desc' },
     });
@@ -108,7 +109,7 @@ describe('listExpenses', () => {
     await listExpenses(month);
 
     expect(db.findMany).toHaveBeenCalledWith({
-      where: { date: { gte: utcStartOfMonth(month), lte: utcEndOfMonth(month) } },
+      where: { ...FILTER, date: { gte: utcStartOfMonth(month), lte: utcEndOfMonth(month) } },
       include: { expenseType: true },
       orderBy: { date: 'desc' },
     });
@@ -124,7 +125,7 @@ describe('getExpenseTotal', () => {
 
     expect(db.aggregate).toHaveBeenCalledWith({
       _sum: { value: true },
-      where: { date: { gte: utcStartOfMonth(month), lte: utcEndOfMonth(month) } },
+      where: { ...FILTER, date: { gte: utcStartOfMonth(month), lte: utcEndOfMonth(month) } },
     });
     expect(result).toBe(500);
   });
