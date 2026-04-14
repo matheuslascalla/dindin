@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* shadcn/ui design tokens — mapeados para o design teal/slate do DinDin */
+    --background: 0 0% 100%;
+    --foreground: 222 47% 7%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 7%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 7%;
+    --primary: 172 82% 31%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 32% 91%;
+    --input: 213 27% 84%;
+    --ring: 172 82% 31%;
+    --radius: 0.5rem;
+
+    /* Legado */
+    --background-start: #eef3ff;
+    --background-mid: #f4f9ff;
+    --background-end: #f0fbf7;
+    --surface: #ffffff;
+    --surface-tinted: #f0fdf9;
+    --border: #e2e8f0;
+    --border-input: #cbd5e1;
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --green: #16a34a;
+    --teal: #0d9488;
+    --red: #dc2626;
+    --amber: #d97706;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background: linear-gradient(135deg, #eef3ff 0%, #f4f9ff 55%, #f0fbf7 100%);
+    min-height: 100vh;
+  }
+
+  /* Custom scrollbar - light */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl bg-white shadow-card;
+  }
+
+  .input-base {
+    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition-colors placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20;
+  }
+
+  .btn-primary {
+    @apply rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-teal-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-secondary {
+    @apply rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-destructive {
+    @apply text-sm text-red-500 transition-colors hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .bg-app {
+    background: linear-gradient(135deg, #eef3ff 0%, #f4f9ff 55%, #f0fbf7 100%);
+  }
+}

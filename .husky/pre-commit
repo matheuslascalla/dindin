@@ -1,0 +1,2 @@
+npx secretlint --secretlintignore .secretlintignore "**/*"
+npx lint-staged --config package.json
