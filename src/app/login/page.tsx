@@ -1,6 +1,9 @@
 import Image from 'next/image';
 
 import { signIn } from '@/auth';
+import { isDevMode } from '@/lib/env';
+
+const AUTH_REDIRECT = '/contexto';
 
 export default function LoginPage() {
   return (
@@ -12,22 +15,59 @@ export default function LoginPage() {
           <p className="text-center text-sm text-gray-500">
             Organize suas finanças com clareza e controle.
           </p>
+
+          {isDevMode && (
+            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">
+              Modo desenvolvimento
+            </span>
+          )}
         </div>
 
-        <form
-          action={async () => {
-            'use server';
-            await signIn('google', { redirectTo: '/contexto' });
-          }}
-        >
-          <button
-            type="submit"
-            className="flex w-full items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white px-6 py-3 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+        {isDevMode ? (
+          <form
+            action={async (formData: FormData) => {
+              'use server';
+
+              const email = formData.get('email') as string;
+              await signIn('credentials', { email, redirectTo: AUTH_REDIRECT });
+            }}
           >
-            <GoogleIcon />
-            Entrar com Google
-          </button>
-        </form>
+            <div className="mb-4">
+              <label htmlFor="email" className="mb-1 block text-sm font-medium text-gray-700">
+                Email
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="dev@example.com"
+                  className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+              </label>
+            </div>
+            <button
+              type="submit"
+              className="flex w-full items-center justify-center gap-3 rounded-xl bg-teal-600 px-6 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+            >
+              Entrar (Dev)
+            </button>
+          </form>
+        ) : (
+          <form
+            action={async () => {
+              'use server';
+              await signIn('google', { redirectTo: AUTH_REDIRECT });
+            }}
+          >
+            <button
+              type="submit"
+              className="flex w-full items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white px-6 py-3 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+            >
+              <GoogleIcon />
+              Entrar com Google
+            </button>
+          </form>
+        )}
 
         <p className="mt-6 text-center text-xs text-gray-400">
           Ao entrar, você concorda com os termos de uso do DinDin.

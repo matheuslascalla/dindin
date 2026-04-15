@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:gen": "prisma generate --schema=prisma/schema.dev.prisma",
+    "dev:setup": "npm run dev:gen && prisma db push --schema=prisma/schema.dev.prisma --skip-generate && prisma db seed",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

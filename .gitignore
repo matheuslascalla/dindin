@@ -13,6 +13,8 @@ out/
 # ─── Banco de dados ───────────────────────────────────────────────────────────
 prisma/*.db
 prisma/*.db-journal
+prisma/*.db-wal
+prisma/*.db-shm
 
 # ─── Build e cache ────────────────────────────────────────────────────────────
 .turbo/

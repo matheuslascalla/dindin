@@ -1,0 +1,171 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id               String        @id @default(cuid())
+  email            String        @unique
+  emailVerified    DateTime?
+  name             String?
+  image            String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  accounts         Account[]
+  cards            CreditCard[]
+  expenses         Expense[]
+  categories       ExpenseType[]
+  houseInvitesSent HouseInvite[] @relation("InvitedBy")
+  houseMembers     HouseMember[]
+  incomes          Income[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model House {
+  id         String        @id @default(cuid())
+  name       String
+  inviteCode String        @unique @default(cuid())
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  cards      CreditCard[]
+  expenses   Expense[]
+  categories ExpenseType[]
+  invites    HouseInvite[]
+  members    HouseMember[]
+  incomes    Income[]
+}
+
+model HouseMember {
+  id       String   @id @default(cuid())
+  userId   String
+  houseId  String
+  role     String   @default("member")
+  joinedAt DateTime @default(now())
+  house    House    @relation(fields: [houseId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, houseId])
+}
+
+model HouseInvite {
+  id          String    @id @default(cuid())
+  houseId     String
+  email       String
+  invitedById String
+  createdAt   DateTime  @default(now())
+  usedAt      DateTime?
+  house       House     @relation(fields: [houseId], references: [id], onDelete: Cascade)
+  invitedBy   User      @relation("InvitedBy", fields: [invitedById], references: [id])
+
+  @@unique([houseId, email])
+}
+
+model Income {
+  id         String   @id @default(cuid())
+  name       String
+  value      Float
+  recurrence String
+  startDate  DateTime
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  userId     String?
+  houseId    String?
+  house      House?   @relation(fields: [houseId], references: [id], onDelete: Cascade)
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ExpenseType {
+  id           String        @id @default(cuid())
+  name         String
+  limitPercent Float
+  color        String
+  icon         String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  userId       String?
+  houseId      String?
+  cardExpenses CardExpense[]
+  expenses     Expense[]
+  house        House?        @relation(fields: [houseId], references: [id], onDelete: Cascade)
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Expense {
+  id            String      @id @default(cuid())
+  name          String
+  value         Float
+  date          DateTime
+  description   String?
+  person        String?
+  expenseTypeId String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  userId        String?
+  houseId       String?
+  expenseType   ExpenseType @relation(fields: [expenseTypeId], references: [id])
+  house         House?      @relation(fields: [houseId], references: [id], onDelete: Cascade)
+  user          User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CreditCard {
+  id        String        @id @default(cuid())
+  name      String
+  brand     String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  userId    String?
+  houseId   String?
+  expenses  CardExpense[]
+  house     House?        @relation(fields: [houseId], references: [id], onDelete: Cascade)
+  user      User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CardExpense {
+  id                 String      @id @default(cuid())
+  cardId             String
+  name               String
+  date               DateTime
+  description        String?
+  person             String?
+  value              Float
+  expenseTypeId      String
+  recurrence         String      @default("none")
+  installmentTotal   Int?
+  installmentNumber  Int?
+  installmentGroupId String?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  card               CreditCard  @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  expenseType        ExpenseType @relation(fields: [expenseTypeId], references: [id])
+}
