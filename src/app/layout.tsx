@@ -21,8 +21,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const headersList = await headers();
   const pathname = headersList.get('x-pathname') ?? '/';
 
-  // Páginas de autenticação e seleção de contexto usam layout próprio (sem AppShell)
-  const isShellRoute = !pathname.startsWith('/login') && !pathname.startsWith('/contexto');
+  // /contexto/casa/gerenciar precisa de shell, então não usamos startsWith genérico em /contexto.
+  const NO_SHELL_ROUTES = ['/login', '/contexto'];
+  const NO_SHELL_PREFIXES = ['/contexto/casa/criar', '/contexto/casa/entrar'];
+  const isShellRoute =
+    !NO_SHELL_ROUTES.includes(pathname) && !NO_SHELL_PREFIXES.some((p) => pathname.startsWith(p));
 
   return (
     <html lang="pt-BR" className={plusJakarta.variable}>

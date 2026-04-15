@@ -88,6 +88,7 @@ export async function createHouse(name: string) {
     },
   });
 
+  revalidatePath('/contexto');
   return house;
 }
 
@@ -130,6 +131,7 @@ export async function joinHouse(inviteCode: string) {
     await tx.houseInvite.update({ where: { id: invite.id }, data: { usedAt: new Date() } });
   });
 
+  revalidatePath('/contexto');
   return house;
 }
 
@@ -168,7 +170,7 @@ export async function inviteToHouse(houseId: string, email: string) {
     update: { usedAt: null, invitedById: userId, createdAt: new Date() },
   });
 
-  revalidatePath('/contexto');
+  revalidatePath('/contexto/casa/gerenciar');
   return invite;
 }
 
