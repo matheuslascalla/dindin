@@ -13,11 +13,23 @@ jest.mock('next/navigation', () => ({
 
 const categories = [{ id: 'cat-1', name: 'Alimentação', color: '#6B7280' }];
 
+const contextPersons = {
+  type: 'personal' as const,
+  user: { id: 'user-1', name: 'Usuário Teste', image: null },
+};
+
 // ─── ExpenseForm ─────────────────────────────────────────────────────────────
 
 describe('ExpenseForm', () => {
   it('renders create mode', () => {
-    render(<ExpenseForm categories={categories} onSuccess={jest.fn()} onCancel={jest.fn()} />);
+    render(
+      <ExpenseForm
+        categories={categories}
+        contextPersons={contextPersons}
+        onSuccess={jest.fn()}
+        onCancel={jest.fn()}
+      />
+    );
     expect(screen.getByRole('button', { name: /criar/i })).toBeInTheDocument();
   });
 
@@ -25,6 +37,7 @@ describe('ExpenseForm', () => {
     render(
       <ExpenseForm
         categories={categories}
+        contextPersons={contextPersons}
         onSuccess={jest.fn()}
         onCancel={jest.fn()}
         initial={{
@@ -42,7 +55,12 @@ describe('ExpenseForm', () => {
 
   it('shows error when submitting with empty value', () => {
     const { container } = render(
-      <ExpenseForm categories={categories} onSuccess={jest.fn()} onCancel={jest.fn()} />
+      <ExpenseForm
+        categories={categories}
+        contextPersons={contextPersons}
+        onSuccess={jest.fn()}
+        onCancel={jest.fn()}
+      />
     );
     fireEvent.submit(container.querySelector('form') as HTMLFormElement);
     expect(screen.getByText('Valor deve ser maior que zero.')).toBeInTheDocument();
@@ -51,11 +69,15 @@ describe('ExpenseForm', () => {
   it('calls createExpense on valid submit', async () => {
     const { createExpense } = jest.requireMock('@/server/actions/expense');
     const { container } = render(
-      <ExpenseForm categories={categories} onSuccess={jest.fn()} onCancel={jest.fn()} />
+      <ExpenseForm
+        categories={categories}
+        contextPersons={contextPersons}
+        onSuccess={jest.fn()}
+        onCancel={jest.fn()}
+      />
     );
     fireEvent.change(screen.getByPlaceholderText('Ex: Conta de luz'), { target: { value: 'Luz' } });
     fireEvent.change(screen.getByPlaceholderText('0,00'), { target: { value: '150' } });
-    fireEvent.change(screen.getByPlaceholderText('Ex: João'), { target: { value: 'Maria' } });
     fireEvent.change(screen.getByPlaceholderText('Observações...'), { target: { value: 'obs' } });
     fireEvent.submit(container.querySelector('form') as HTMLFormElement);
     await waitFor(() => expect(createExpense).toHaveBeenCalled());
@@ -63,7 +85,14 @@ describe('ExpenseForm', () => {
 
   it('calls onCancel when cancel is clicked', () => {
     const onCancel = jest.fn();
-    render(<ExpenseForm categories={categories} onSuccess={jest.fn()} onCancel={onCancel} />);
+    render(
+      <ExpenseForm
+        categories={categories}
+        contextPersons={contextPersons}
+        onSuccess={jest.fn()}
+        onCancel={onCancel}
+      />
+    );
     fireEvent.click(screen.getByRole('button', { name: /cancelar/i }));
     expect(onCancel).toHaveBeenCalled();
   });
@@ -73,6 +102,7 @@ describe('ExpenseForm', () => {
     const { container } = render(
       <ExpenseForm
         categories={categories}
+        contextPersons={contextPersons}
         onSuccess={jest.fn()}
         onCancel={jest.fn()}
         initial={{
@@ -107,6 +137,7 @@ describe('ExpenseList', () => {
       <ExpenseList
         expenses={[]}
         categories={categories}
+        contextPersons={contextPersons}
         currentMonth={new Date('2024-03-01')}
         total={0}
       />
@@ -119,6 +150,7 @@ describe('ExpenseList', () => {
       <ExpenseList
         expenses={[expense]}
         categories={categories}
+        contextPersons={contextPersons}
         currentMonth={new Date('2024-03-01')}
         total={50}
       />
@@ -131,6 +163,7 @@ describe('ExpenseList', () => {
       <ExpenseList
         expenses={[]}
         categories={categories}
+        contextPersons={contextPersons}
         currentMonth={new Date('2024-03-01')}
         total={0}
       />
@@ -146,6 +179,7 @@ describe('ExpenseList', () => {
       <ExpenseList
         expenses={[]}
         categories={categories}
+        contextPersons={contextPersons}
         currentMonth={new Date('2024-03-01')}
         total={0}
       />
@@ -163,6 +197,7 @@ describe('ExpenseList', () => {
       <ExpenseList
         expenses={[]}
         categories={categories}
+        contextPersons={contextPersons}
         currentMonth={new Date('2024-03-01')}
         total={0}
       />
@@ -177,6 +212,7 @@ describe('ExpenseList', () => {
       <ExpenseList
         expenses={[expense]}
         categories={categories}
+        contextPersons={contextPersons}
         currentMonth={new Date('2024-03-01')}
         total={50}
       />
@@ -192,6 +228,7 @@ describe('ExpenseList', () => {
       <ExpenseList
         expenses={[expense]}
         categories={categories}
+        contextPersons={contextPersons}
         currentMonth={new Date('2024-03-01')}
         total={50}
       />
@@ -206,6 +243,7 @@ describe('ExpenseList', () => {
       <ExpenseList
         expenses={[]}
         categories={categories}
+        contextPersons={contextPersons}
         currentMonth={new Date('2024-03-01')}
         total={0}
       />
@@ -219,6 +257,7 @@ describe('ExpenseList', () => {
       <ExpenseList
         expenses={[]}
         categories={categories}
+        contextPersons={contextPersons}
         currentMonth={new Date('2024-03-01')}
         total={0}
       />
@@ -233,6 +272,7 @@ describe('ExpenseList', () => {
       <ExpenseList
         expenses={[expense]}
         categories={categories}
+        contextPersons={contextPersons}
         currentMonth={new Date('2024-03-01')}
         total={50}
       />
@@ -249,6 +289,7 @@ describe('ExpenseList', () => {
       <ExpenseList
         expenses={[expense]}
         categories={categories}
+        contextPersons={contextPersons}
         currentMonth={new Date('2024-03-01')}
         total={50}
       />

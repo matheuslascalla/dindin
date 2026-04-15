@@ -6,14 +6,17 @@ const mockRevalidatePath = jest.fn();
 const mockCookiesSet = jest.fn();
 const mockCookiesDelete = jest.fn();
 
+const mockGetActiveContext = jest.fn();
+
 jest.mock('@/lib/context', () => ({
   requireAuth: (...args: unknown[]) => mockRequireAuth(...args),
+  getActiveContext: (...args: unknown[]) => mockGetActiveContext(...args),
 }));
 jest.mock('@/lib/prisma', () => ({
   prisma: {
     houseMember: { findMany: jest.fn(), findUnique: jest.fn(), create: jest.fn() },
     house: { create: jest.fn(), findUnique: jest.fn(), delete: jest.fn() },
-    user: { findUnique: jest.fn() },
+    user: { findUnique: jest.fn(), findUniqueOrThrow: jest.fn() },
     houseInvite: { findUnique: jest.fn(), upsert: jest.fn(), update: jest.fn() },
     expenseType: { count: jest.fn(), createMany: jest.fn() },
     $transaction: jest.fn(),
@@ -26,14 +29,13 @@ jest.mock('next/cache', () => ({
   revalidatePath: (...args: unknown[]) => mockRevalidatePath(...args),
 }));
 jest.mock('next/headers', () => ({
-  cookies: jest.fn(() =>
-    Promise.resolve({ set: mockCookiesSet, delete: mockCookiesDelete })
-  ),
+  cookies: jest.fn(() => Promise.resolve({ set: mockCookiesSet, delete: mockCookiesDelete })),
 }));
 
 import {
   setActiveContext,
   listUserContexts,
+  getContextPersons,
   createHouse,
   joinHouse,
   inviteToHouse,
@@ -47,7 +49,7 @@ import { prisma } from '@/lib/prisma';
 const db = prisma as unknown as {
   houseMember: jest.Mocked<typeof prisma.houseMember> & { findMany: jest.Mock };
   house: jest.Mocked<typeof prisma.house>;
-  user: jest.Mocked<typeof prisma.user>;
+  user: jest.Mocked<typeof prisma.user> & { findUniqueOrThrow: jest.Mock };
   houseInvite: { findUnique: jest.Mock; upsert: jest.Mock; update: jest.Mock };
   expenseType: { count: jest.Mock; createMany: jest.Mock };
   $transaction: jest.Mock;
@@ -84,6 +86,50 @@ describe('listUserContexts', () => {
     expect(result.personal).toEqual({ userId: 'u1' });
     expect(result.houses).toHaveLength(1);
     expect(result.houses[0]).toMatchObject({ id: 'h1', role: 'owner' });
+  });
+});
+
+// ─── getContextPersons ───────────────────────────────────────────────────────
+
+describe('getContextPersons', () => {
+  it('throws when there is no active context', async () => {
+    mockGetActiveContext.mockResolvedValue(null);
+    await expect(getContextPersons()).rejects.toThrow('Nenhum contexto financeiro ativo');
+  });
+
+  it('returns personal user when context is personal', async () => {
+    mockGetActiveContext.mockResolvedValue({ type: 'personal', userId: 'u1' });
+    db.user.findUniqueOrThrow.mockResolvedValue({
+      id: 'u1',
+      name: 'Matheus',
+      image: null,
+    } as never);
+
+    const result = await getContextPersons();
+
+    expect(result).toEqual({ type: 'personal', user: { id: 'u1', name: 'Matheus', image: null } });
+  });
+
+  it('returns house members when context is house', async () => {
+    mockGetActiveContext.mockResolvedValue({
+      type: 'house',
+      houseId: 'h1',
+      houseName: 'Casa',
+    });
+    db.houseMember.findMany.mockResolvedValue([
+      { user: { id: 'u1', name: 'Matheus', image: null } },
+      { user: { id: 'u2', name: 'Ana', image: null } },
+    ] as never);
+
+    const result = await getContextPersons();
+
+    expect(result).toEqual({
+      type: 'house',
+      members: [
+        { id: 'u1', name: 'Matheus', image: null },
+        { id: 'u2', name: 'Ana', image: null },
+      ],
+    });
   });
 });
 

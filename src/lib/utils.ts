@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import type { ContextPersons } from '@/server/actions/house';
 import {
   Home,
   Target,
@@ -90,6 +91,15 @@ export const RECURRENCE_LABEL: Record<string, string> = {
 /** Converts a Date (or today) to the yyyy-MM-dd string required by <input type="date"> */
 export function toDateInputValue(date: Date | string = new Date()): string {
   return new Date(date).toISOString().split('T')[0];
+}
+
+export function resolvePersonFromContext(
+  contextPersons: ContextPersons,
+  formPerson: string
+): string | undefined {
+  return contextPersons.type === 'personal'
+    ? (contextPersons.user.name ?? undefined)
+    : formPerson || undefined;
 }
 
 /** Prisma filter for CardExpense: one-off/installments in the given range + all monthly recurrences */

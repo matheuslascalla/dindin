@@ -73,12 +73,18 @@ describe('CardForm', () => {
 
 const categories = [{ id: 'cat-1', name: 'Alimentação', color: '#6B7280' }];
 
+const contextPersons = {
+  type: 'personal' as const,
+  user: { id: 'user-1', name: 'Usuário Teste', image: null },
+};
+
 describe('CardExpenseForm', () => {
   it('renders create mode with kind selector', () => {
     render(
       <CardExpenseForm
         cardId="card-1"
         categories={categories}
+        contextPersons={contextPersons}
         onSuccess={jest.fn()}
         onCancel={jest.fn()}
       />
@@ -91,6 +97,7 @@ describe('CardExpenseForm', () => {
       <CardExpenseForm
         cardId="card-1"
         categories={categories}
+        contextPersons={contextPersons}
         onSuccess={jest.fn()}
         onCancel={jest.fn()}
         initial={{
@@ -112,6 +119,7 @@ describe('CardExpenseForm', () => {
       <CardExpenseForm
         cardId="card-1"
         categories={categories}
+        contextPersons={contextPersons}
         onSuccess={jest.fn()}
         onCancel={jest.fn()}
       />
@@ -126,13 +134,13 @@ describe('CardExpenseForm', () => {
       <CardExpenseForm
         cardId="card-1"
         categories={categories}
+        contextPersons={contextPersons}
         onSuccess={jest.fn()}
         onCancel={jest.fn()}
       />
     );
     fireEvent.change(screen.getByPlaceholderText('Ex: Netflix'), { target: { value: 'Netflix' } });
     fireEvent.change(screen.getByPlaceholderText('0,00'), { target: { value: '50' } });
-    fireEvent.change(screen.getByPlaceholderText('Ex: João'), { target: { value: 'Ana' } });
     fireEvent.change(screen.getByPlaceholderText('Ex: Plano família, 4 usuários'), {
       target: { value: 'obs' },
     });
@@ -145,6 +153,7 @@ describe('CardExpenseForm', () => {
       <CardExpenseForm
         cardId="card-1"
         categories={categories}
+        contextPersons={contextPersons}
         onSuccess={jest.fn()}
         onCancel={jest.fn()}
       />
@@ -158,6 +167,7 @@ describe('CardExpenseForm', () => {
       <CardExpenseForm
         cardId="card-1"
         categories={categories}
+        contextPersons={contextPersons}
         onSuccess={jest.fn()}
         onCancel={jest.fn()}
       />
@@ -172,6 +182,7 @@ describe('CardExpenseForm', () => {
       <CardExpenseForm
         cardId="card-1"
         categories={categories}
+        contextPersons={contextPersons}
         onSuccess={jest.fn()}
         onCancel={onCancel}
       />
@@ -199,6 +210,7 @@ describe('CardList', () => {
         totalsByCard={{}}
         grandTotal={0}
         categories={[]}
+        contextPersons={contextPersons}
         currentMonth={new Date('2024-03-01')}
       />
     );
@@ -213,6 +225,7 @@ describe('CardList', () => {
         totalsByCard={{ 'card-1': 500 }}
         grandTotal={500}
         categories={[]}
+        contextPersons={contextPersons}
         currentMonth={new Date('2024-03-01')}
       />
     );
@@ -227,6 +240,7 @@ describe('CardList', () => {
         totalsByCard={{}}
         grandTotal={0}
         categories={[]}
+        contextPersons={contextPersons}
         currentMonth={new Date('2024-03-01')}
       />
     );
@@ -244,6 +258,7 @@ describe('CardItem', () => {
         card={sampleCard}
         expenses={[]}
         categories={[]}
+        contextPersons={contextPersons}
         monthTotal={750}
         onEditCard={jest.fn()}
       />
@@ -257,6 +272,7 @@ describe('CardItem', () => {
         card={sampleCard}
         expenses={[]}
         categories={[]}
+        contextPersons={contextPersons}
         monthTotal={0}
         onEditCard={jest.fn()}
       />
@@ -270,6 +286,7 @@ describe('CardItem', () => {
         card={sampleCard}
         expenses={[]}
         categories={[]}
+        contextPersons={contextPersons}
         monthTotal={0}
         onEditCard={jest.fn()}
       />
@@ -285,6 +302,7 @@ describe('CardItem', () => {
         card={sampleCard}
         expenses={[]}
         categories={[]}
+        contextPersons={contextPersons}
         monthTotal={0}
         onEditCard={jest.fn()}
       />
@@ -300,6 +318,7 @@ describe('CardItem', () => {
         card={sampleCard}
         expenses={[]}
         categories={[]}
+        contextPersons={contextPersons}
         monthTotal={0}
         onEditCard={onEditCard}
       />
@@ -315,6 +334,7 @@ describe('CardItem', () => {
         card={sampleCard}
         expenses={[]}
         categories={[]}
+        contextPersons={contextPersons}
         monthTotal={0}
         onEditCard={jest.fn()}
       />
@@ -329,6 +349,7 @@ describe('CardItem', () => {
         card={sampleCard}
         expenses={[]}
         categories={[]}
+        contextPersons={contextPersons}
         monthTotal={0}
         onEditCard={jest.fn()}
       />
@@ -369,6 +390,7 @@ describe('CardItem expense interactions', () => {
         card={sampleCard}
         expenses={[sampleExpense]}
         categories={[]}
+        contextPersons={contextPersons}
         monthTotal={50}
         onEditCard={jest.fn()}
       />
@@ -383,6 +405,7 @@ describe('CardItem expense interactions', () => {
         card={sampleCard}
         expenses={[]}
         categories={[]}
+        contextPersons={contextPersons}
         monthTotal={0}
         onEditCard={jest.fn()}
       />
@@ -398,6 +421,7 @@ describe('CardItem expense interactions', () => {
         card={sampleCard}
         expenses={[sampleExpense]}
         categories={[]}
+        contextPersons={contextPersons}
         monthTotal={50}
         onEditCard={jest.fn()}
       />
@@ -416,6 +440,7 @@ describe('CardItem expense interactions', () => {
         card={sampleCard}
         expenses={[sampleExpense]}
         categories={[]}
+        contextPersons={contextPersons}
         monthTotal={50}
         onEditCard={jest.fn()}
       />
@@ -435,6 +460,7 @@ describe('CardItem expense interactions', () => {
         card={sampleCard}
         expenses={[sampleExpense]}
         categories={[]}
+        contextPersons={contextPersons}
         monthTotal={50}
         onEditCard={jest.fn()}
       />
@@ -452,6 +478,7 @@ describe('CardItem expense interactions', () => {
         card={sampleCard}
         expenses={[sampleInstallmentExpense]}
         categories={[]}
+        contextPersons={contextPersons}
         monthTotal={50}
         onEditCard={jest.fn()}
       />
@@ -472,6 +499,7 @@ describe('CardItem expense interactions', () => {
         card={sampleCard}
         expenses={[sampleInstallmentExpense]}
         categories={[]}
+        contextPersons={contextPersons}
         monthTotal={50}
         onEditCard={jest.fn()}
       />
@@ -490,6 +518,7 @@ describe('CardItem expense interactions', () => {
         card={sampleCard}
         expenses={[]}
         categories={[]}
+        contextPersons={contextPersons}
         monthTotal={0}
         onEditCard={jest.fn()}
       />
@@ -513,6 +542,7 @@ describe('CardList interactions', () => {
         totalsByCard={{}}
         grandTotal={0}
         categories={[]}
+        contextPersons={contextPersons}
         currentMonth={new Date('2024-03-01')}
       />
     );
@@ -531,6 +561,7 @@ describe('CardList interactions', () => {
         totalsByCard={{}}
         grandTotal={0}
         categories={[]}
+        contextPersons={contextPersons}
         currentMonth={new Date('2024-03-01')}
       />
     );
@@ -546,6 +577,7 @@ describe('CardList interactions', () => {
         totalsByCard={{}}
         grandTotal={0}
         categories={[]}
+        contextPersons={contextPersons}
         currentMonth={new Date('2024-03-01')}
       />
     );
@@ -561,6 +593,7 @@ describe('CardList interactions', () => {
         totalsByCard={{}}
         grandTotal={0}
         categories={[]}
+        contextPersons={contextPersons}
         currentMonth={new Date('2024-03-01')}
       />
     );
@@ -576,6 +609,7 @@ describe('CardList interactions', () => {
         totalsByCard={{}}
         grandTotal={0}
         categories={[]}
+        contextPersons={contextPersons}
         currentMonth={new Date('2024-03-01')}
       />
     );
@@ -593,6 +627,7 @@ describe('CardList interactions', () => {
         totalsByCard={{ 'card-1': 0 }}
         grandTotal={0}
         categories={[]}
+        contextPersons={contextPersons}
         currentMonth={new Date('2024-03-01')}
       />
     );

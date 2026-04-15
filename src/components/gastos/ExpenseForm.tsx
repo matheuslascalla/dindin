@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
+import { PersonToggle } from '@/components/ui/PersonToggle';
 import { createExpense, updateExpense } from '@/server/actions/expense';
-import { toDateInputValue } from '@/lib/utils';
+import type { ContextPersons } from '@/server/actions/house';
+import { toDateInputValue, resolvePersonFromContext } from '@/lib/utils';
 
 interface Category {
   id: string;
@@ -16,6 +18,7 @@ interface Category {
 
 interface ExpenseFormProps {
   categories: Category[];
+  contextPersons: ContextPersons;
   onSuccess: () => void;
   onCancel: () => void;
   initial?: {
@@ -29,7 +32,13 @@ interface ExpenseFormProps {
   } | null;
 }
 
-export function ExpenseForm({ categories, onSuccess, onCancel, initial }: ExpenseFormProps) {
+export function ExpenseForm({
+  categories,
+  contextPersons,
+  onSuccess,
+  onCancel,
+  initial,
+}: ExpenseFormProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -55,12 +64,14 @@ export function ExpenseForm({ categories, onSuccess, onCancel, initial }: Expens
 
     startTransition(async () => {
       try {
+        const person = resolvePersonFromContext(contextPersons, form.person);
+
         const data = {
           name: form.name,
           value,
           date: new Date(form.date),
           description: form.description || undefined,
-          person: form.person || undefined,
+          person,
           expenseTypeId: form.expenseTypeId,
         };
         if (initial) {
@@ -114,12 +125,14 @@ export function ExpenseForm({ categories, onSuccess, onCancel, initial }: Expens
         required
       />
 
-      <Input
-        label="Pessoa (opcional)"
-        placeholder="Ex: João"
-        value={form.person}
-        onChange={(e) => setForm({ ...form, person: e.target.value })}
-      />
+      {contextPersons.type === 'house' && (
+        <PersonToggle
+          label="Pessoa (opcional)"
+          persons={contextPersons.members.map((m) => ({ name: m.name ?? m.id, image: m.image }))}
+          value={form.person || null}
+          onChange={(name) => setForm({ ...form, person: name ?? '' })}
+        />
+      )}
 
       <Textarea
         label="Descrição (opcional)"

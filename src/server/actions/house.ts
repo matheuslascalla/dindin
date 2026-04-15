@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 import { prisma } from '@/lib/prisma';
-import { requireAuth } from '@/lib/context';
+import { requireAuth, getActiveContext } from '@/lib/context';
 
 // Categorias padrão conforme as regras de negócio (business.md)
 const DEFAULT_CATEGORIES = [
@@ -62,6 +62,32 @@ export async function listUserContexts() {
       role: m.role as 'owner' | 'member',
     })),
   };
+}
+
+// ─── Pessoas do Contexto ──────────────────────────────────────────────────────
+
+export type ContextPersons =
+  | { type: 'personal'; user: { id: string; name: string | null; image: string | null } }
+  | { type: 'house'; members: Array<{ id: string; name: string | null; image: string | null }> };
+
+export async function getContextPersons(): Promise<ContextPersons> {
+  const ctx = await getActiveContext();
+  if (!ctx) throw new Error('Nenhum contexto financeiro ativo.');
+
+  if (ctx.type === 'personal') {
+    const user = await prisma.user.findUniqueOrThrow({
+      where: { id: ctx.userId },
+      select: { id: true, name: true, image: true },
+    });
+    return { type: 'personal', user };
+  }
+
+  const members = await prisma.houseMember.findMany({
+    where: { houseId: ctx.houseId },
+    include: { user: { select: { id: true, name: true, image: true } } },
+    orderBy: { joinedAt: 'asc' },
+  });
+  return { type: 'house', members: members.map((m) => m.user) };
 }
 
 // ─── Casa ─────────────────────────────────────────────────────────────────────

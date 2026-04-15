@@ -14,6 +14,7 @@ export type ActiveContext =
  * Formatos do cookie:
  *  - "personal"         → contexto pessoal do usuário
  *  - "house:{houseId}"  → contexto de uma casa específica
+ *
  */
 export async function getActiveContext(): Promise<ActiveContext | null> {
   const session = await auth();

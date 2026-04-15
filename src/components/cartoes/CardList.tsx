@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { MonthNavigator } from '@/components/ui/MonthNavigator';
+import type { ContextPersons } from '@/server/actions/house';
 import { formatCurrency } from '@/lib/utils';
 import { CardItem } from './CardItem';
 import { CardForm } from './CardForm';
@@ -45,6 +46,7 @@ interface CardListProps {
   totalsByCard: Record<string, number>;
   grandTotal: number;
   categories: Category[];
+  contextPersons: ContextPersons;
   currentMonth: Date;
 }
 
@@ -54,6 +56,7 @@ export function CardList({
   totalsByCard,
   grandTotal,
   categories,
+  contextPersons,
   currentMonth,
 }: CardListProps) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -109,6 +112,7 @@ export function CardList({
               card={card}
               expenses={expensesByCard[card.id] ?? []}
               categories={categories}
+              contextPersons={contextPersons}
               monthTotal={totalsByCard[card.id] ?? 0}
               onEditCard={() => setEditingCard(card)}
             />

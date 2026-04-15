@@ -1,5 +1,6 @@
 import { listCards, listCardExpenses, getCardTotal, getAllCardsTotal } from '@/server/actions/card';
 import { listCategories } from '@/server/actions/category';
+import { getContextPersons } from '@/server/actions/house';
 import { CardList } from '@/components/cartoes/CardList';
 
 interface CartoesPageProps {
@@ -9,10 +10,11 @@ interface CartoesPageProps {
 export default async function CartoesPage({ searchParams }: CartoesPageProps) {
   const currentMonth = searchParams.month ? new Date(searchParams.month) : new Date();
 
-  const [cards, categories, grandTotal] = await Promise.all([
+  const [cards, categories, grandTotal, contextPersons] = await Promise.all([
     listCards(),
     listCategories(),
     getAllCardsTotal(currentMonth),
+    getContextPersons(),
   ]);
 
   // Fetch expenses and totals per card in parallel
@@ -35,6 +37,7 @@ export default async function CartoesPage({ searchParams }: CartoesPageProps) {
       totalsByCard={totalsByCard}
       grandTotal={grandTotal}
       categories={categories}
+      contextPersons={contextPersons}
       currentMonth={currentMonth}
     />
   );

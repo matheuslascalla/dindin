@@ -14,6 +14,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { CategoryBadge } from '@/components/ui/CategoryBadge';
 import { deleteCard, deleteCardExpense, deleteInstallmentGroup } from '@/server/actions/card';
+import type { ContextPersons } from '@/server/actions/house';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { CardExpenseForm } from './CardExpenseForm';
 
@@ -47,11 +48,19 @@ interface CardItemProps {
   };
   expenses: CardExpense[];
   categories: Category[];
+  contextPersons: ContextPersons;
   monthTotal: number;
   onEditCard: () => void;
 }
 
-export function CardItem({ card, expenses, categories, monthTotal, onEditCard }: CardItemProps) {
+export function CardItem({
+  card,
+  expenses,
+  categories,
+  contextPersons,
+  monthTotal,
+  onEditCard,
+}: CardItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<CardExpense | null>(null);
@@ -249,6 +258,7 @@ export function CardItem({ card, expenses, categories, monthTotal, onEditCard }:
         <CardExpenseForm
           cardId={card.id}
           categories={categories}
+          contextPersons={contextPersons}
           onSuccess={() => setIsAddExpenseOpen(false)}
           onCancel={() => setIsAddExpenseOpen(false)}
         />
@@ -262,6 +272,7 @@ export function CardItem({ card, expenses, categories, monthTotal, onEditCard }:
         <CardExpenseForm
           cardId={card.id}
           categories={categories}
+          contextPersons={contextPersons}
           initial={editingExpense}
           onSuccess={() => setEditingExpense(null)}
           onCancel={() => setEditingExpense(null)}

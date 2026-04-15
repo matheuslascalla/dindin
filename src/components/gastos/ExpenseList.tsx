@@ -9,6 +9,7 @@ import { MetricCard } from '@/components/ui/MetricCard';
 import { CategoryBadge } from '@/components/ui/CategoryBadge';
 import { MonthNavigator } from '@/components/ui/MonthNavigator';
 import { deleteExpense } from '@/server/actions/expense';
+import type { ContextPersons } from '@/server/actions/house';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { ExpenseForm } from './ExpenseForm';
 
@@ -33,11 +34,18 @@ interface Category {
 interface ExpenseListProps {
   expenses: Expense[];
   categories: Category[];
+  contextPersons: ContextPersons;
   currentMonth: Date;
   total: number;
 }
 
-export function ExpenseList({ expenses, categories, currentMonth, total }: ExpenseListProps) {
+export function ExpenseList({
+  expenses,
+  categories,
+  contextPersons,
+  currentMonth,
+  total,
+}: ExpenseListProps) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -169,6 +177,7 @@ export function ExpenseList({ expenses, categories, currentMonth, total }: Expen
       <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Novo Gasto">
         <ExpenseForm
           categories={categories}
+          contextPersons={contextPersons}
           onSuccess={() => setIsCreateOpen(false)}
           onCancel={() => setIsCreateOpen(false)}
         />
@@ -177,6 +186,7 @@ export function ExpenseList({ expenses, categories, currentMonth, total }: Expen
       <Modal isOpen={!!editingExpense} onClose={() => setEditingExpense(null)} title="Editar Gasto">
         <ExpenseForm
           categories={categories}
+          contextPersons={contextPersons}
           initial={editingExpense}
           onSuccess={() => setEditingExpense(null)}
           onCancel={() => setEditingExpense(null)}
