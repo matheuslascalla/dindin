@@ -125,15 +125,14 @@ export function Sidebar({ user, contextLabel, houseId }: SidebarProps) {
             <p className="truncate text-[10px] text-slate-400">{user.email ?? ''}</p>
           </div>
 
-          <form action={signOutAction}>
-            <button
-              type="submit"
-              title="Sair"
-              className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
-            >
-              <LogOut size={14} />
-            </button>
-          </form>
+          <button
+            type="button"
+            title="Sair"
+            onClick={() => signOutAction()}
+            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+          >
+            <LogOut size={14} />
+          </button>
         </div>
       </div>
     </aside>

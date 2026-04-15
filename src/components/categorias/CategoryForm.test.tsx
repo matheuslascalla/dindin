@@ -48,7 +48,7 @@ describe('CategoryForm — create mode', () => {
     // Form starts with empty limitPercent — parseFloat('') = NaN → validation fails
     const { container } = render(<CategoryForm onSuccess={jest.fn()} onCancel={jest.fn()} />);
 
-    fireEvent.submit(container.querySelector('form')!);
+    fireEvent.submit(container.querySelector('form') as HTMLFormElement);
 
     await waitFor(() => {
       expect(screen.getByText(/entre 0.1 e 100/i)).toBeInTheDocument();

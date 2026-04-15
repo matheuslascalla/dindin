@@ -37,7 +37,7 @@ describe('IncomeForm', () => {
 
   it('shows error when submitting with empty value', () => {
     const { container } = render(<IncomeForm onSuccess={jest.fn()} onCancel={jest.fn()} />);
-    fireEvent.submit(container.querySelector('form')!);
+    fireEvent.submit(container.querySelector('form') as HTMLFormElement);
     expect(screen.getByText('Valor deve ser maior que zero.')).toBeInTheDocument();
   });
 
@@ -49,11 +49,13 @@ describe('IncomeForm', () => {
     });
     fireEvent.change(screen.getByPlaceholderText('0,00'), { target: { value: '5000' } });
     // Cover recurrence select onChange and date onChange
-    fireEvent.change(container.querySelector('select')!, { target: { value: 'eventual' } });
-    fireEvent.change(container.querySelector('input[type="date"]')!, {
+    fireEvent.change(container.querySelector('select') as HTMLSelectElement, {
+      target: { value: 'eventual' },
+    });
+    fireEvent.change(container.querySelector('input[type="date"]') as HTMLInputElement, {
       target: { value: '2024-01-01' },
     });
-    fireEvent.submit(container.querySelector('form')!);
+    fireEvent.submit(container.querySelector('form') as HTMLFormElement);
     await waitFor(() => expect(createIncome).toHaveBeenCalled());
   });
 
@@ -86,7 +88,7 @@ describe('IncomeForm', () => {
         }}
       />
     );
-    fireEvent.submit(container.querySelector('form')!);
+    fireEvent.submit(container.querySelector('form') as HTMLFormElement);
     await waitFor(() => expect(updateIncome).toHaveBeenCalledWith('inc-1', expect.any(Object)));
   });
 });

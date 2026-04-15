@@ -51,7 +51,7 @@ describe('CardForm', () => {
     fireEvent.change(screen.getByPlaceholderText(/visa, mastercard/i), {
       target: { value: 'Visa' },
     });
-    fireEvent.submit(container.querySelector('form')!);
+    fireEvent.submit(container.querySelector('form') as HTMLFormElement);
     await waitFor(() => expect(createCard).toHaveBeenCalled());
   });
 
@@ -64,7 +64,7 @@ describe('CardForm', () => {
         initial={{ id: 'c1', name: 'Nubank', brand: 'Mastercard' }}
       />
     );
-    fireEvent.submit(container.querySelector('form')!);
+    fireEvent.submit(container.querySelector('form') as HTMLFormElement);
     await waitFor(() => expect(updateCard).toHaveBeenCalledWith('c1', expect.any(Object)));
   });
 });
@@ -116,7 +116,7 @@ describe('CardExpenseForm', () => {
         onCancel={jest.fn()}
       />
     );
-    fireEvent.submit(container.querySelector('form')!);
+    fireEvent.submit(container.querySelector('form') as HTMLFormElement);
     expect(screen.getByText('Valor deve ser maior que zero.')).toBeInTheDocument();
   });
 
@@ -136,7 +136,7 @@ describe('CardExpenseForm', () => {
     fireEvent.change(screen.getByPlaceholderText('Ex: Plano família, 4 usuários'), {
       target: { value: 'obs' },
     });
-    fireEvent.submit(container.querySelector('form')!);
+    fireEvent.submit(container.querySelector('form') as HTMLFormElement);
     await waitFor(() => expect(createCardExpense).toHaveBeenCalled());
   });
 

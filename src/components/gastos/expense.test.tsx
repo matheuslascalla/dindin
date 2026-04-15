@@ -44,7 +44,7 @@ describe('ExpenseForm', () => {
     const { container } = render(
       <ExpenseForm categories={categories} onSuccess={jest.fn()} onCancel={jest.fn()} />
     );
-    fireEvent.submit(container.querySelector('form')!);
+    fireEvent.submit(container.querySelector('form') as HTMLFormElement);
     expect(screen.getByText('Valor deve ser maior que zero.')).toBeInTheDocument();
   });
 
@@ -57,7 +57,7 @@ describe('ExpenseForm', () => {
     fireEvent.change(screen.getByPlaceholderText('0,00'), { target: { value: '150' } });
     fireEvent.change(screen.getByPlaceholderText('Ex: João'), { target: { value: 'Maria' } });
     fireEvent.change(screen.getByPlaceholderText('Observações...'), { target: { value: 'obs' } });
-    fireEvent.submit(container.querySelector('form')!);
+    fireEvent.submit(container.querySelector('form') as HTMLFormElement);
     await waitFor(() => expect(createExpense).toHaveBeenCalled());
   });
 
@@ -84,7 +84,7 @@ describe('ExpenseForm', () => {
         }}
       />
     );
-    fireEvent.submit(container.querySelector('form')!);
+    fireEvent.submit(container.querySelector('form') as HTMLFormElement);
     await waitFor(() => expect(updateExpense).toHaveBeenCalledWith('exp-1', expect.any(Object)));
   });
 });

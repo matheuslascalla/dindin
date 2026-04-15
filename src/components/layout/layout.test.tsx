@@ -1,4 +1,7 @@
 // AppShell is an async server component — call it as a function, then render the result.
+jest.mock('@/server/actions/auth', () => ({
+  signOutAction: jest.fn(),
+}));
 jest.mock('@/auth', () => ({
   auth: jest.fn().mockResolvedValue({
     user: { name: 'Test User', email: 'test@test.com', image: null },
