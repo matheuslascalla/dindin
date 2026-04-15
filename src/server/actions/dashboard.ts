@@ -52,6 +52,7 @@ export interface CategoryBreakdown {
   id: string;
   name: string;
   color: string;
+  icon: string;
   limitPercent: number;
   totalValue: number;
   percentOfIncome: number;
@@ -69,6 +70,7 @@ export interface TopExpense {
   value: number;
   categoryName: string;
   categoryColor: string;
+  categoryIcon: string;
   person?: string;
   source: 'expense' | 'card';
   cardName?: string;
@@ -90,6 +92,7 @@ export interface CategoryAlert {
   id: string;
   name: string;
   color: string;
+  icon: string;
   limitPercent: number;
   currentPercent: number;
   status: 'warning' | 'danger';
@@ -205,6 +208,7 @@ export async function getExpensesByCategory(month: Date): Promise<CategoryBreakd
       id: cat.id,
       name: cat.name,
       color: cat.color,
+      icon: cat.icon,
       limitPercent: cat.limitPercent,
       totalValue,
       percentOfIncome,
@@ -300,6 +304,7 @@ export async function getTopExpenses(month: Date, limit: number = 5): Promise<To
       value: e.value,
       categoryName: e.expenseType.name,
       categoryColor: e.expenseType.color,
+      categoryIcon: e.expenseType.icon,
       person: e.person ?? undefined,
       source: 'expense' as const,
     })),
@@ -308,6 +313,7 @@ export async function getTopExpenses(month: Date, limit: number = 5): Promise<To
       value: e.value,
       categoryName: e.expenseType.name,
       categoryColor: e.expenseType.color,
+      categoryIcon: e.expenseType.icon,
       person: e.person ?? undefined,
       source: 'card' as const,
       cardName: e.card.name,
@@ -371,6 +377,7 @@ export async function getCategoryAlerts(month: Date): Promise<CategoryAlert[]> {
       id: b.id,
       name: b.name,
       color: b.color,
+      icon: b.icon,
       limitPercent: b.limitPercent,
       currentPercent: b.percentOfIncome,
       status: b.status as 'warning' | 'danger',

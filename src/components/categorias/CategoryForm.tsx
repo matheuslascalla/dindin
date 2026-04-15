@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { createCategory, updateCategory } from '@/server/actions/category';
+import { getCategoryIcon } from '@/lib/utils';
 
 const AVAILABLE_ICONS = [
   'home',
@@ -120,20 +121,25 @@ export function CategoryForm({ onSuccess, onCancel, initial }: CategoryFormProps
         {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
         <label className="block text-sm font-medium text-slate-600">Ícone</label>
         <div className="grid grid-cols-5 gap-1.5">
-          {AVAILABLE_ICONS.map((icon) => (
-            <button
-              key={icon}
-              type="button"
-              onClick={() => setForm({ ...form, icon })}
-              className={`rounded-lg px-2 py-1.5 text-xs transition-colors ${
-                form.icon === icon
-                  ? 'bg-teal-600 font-semibold text-white'
-                  : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800'
-              } `}
-            >
-              {icon}
-            </button>
-          ))}
+          {AVAILABLE_ICONS.map((icon) => {
+            const IconComponent = getCategoryIcon(icon);
+            const isSelected = form.icon === icon;
+            return (
+              <button
+                key={icon}
+                type="button"
+                title={icon}
+                onClick={() => setForm({ ...form, icon })}
+                className={`flex items-center justify-center rounded-lg p-2.5 transition-colors ${
+                  isSelected
+                    ? 'bg-teal-600 text-white'
+                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700'
+                }`}
+              >
+                <IconComponent className="h-4 w-4" />
+              </button>
+            );
+          })}
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 import { AlertTriangle, AlertCircle, CheckCircle } from 'lucide-react';
 import { ContentCard } from '@/components/ui/ContentCard';
-import { formatPercent } from '@/lib/utils';
+import { formatPercent, getCategoryIcon } from '@/lib/utils';
 import type { CategoryAlert } from '@/server/actions/dashboard';
 
 interface CategoryAlertsProps {
@@ -40,13 +40,24 @@ export function CategoryAlerts({ alerts }: CategoryAlertsProps) {
               <AlertTriangle size={14} className="mt-0.5 shrink-0 text-amber-600" />
             )}
             <div className="min-w-0">
-              <p
-                className={`text-sm font-semibold ${
-                  alert.status === 'danger' ? 'text-red-600' : 'text-amber-700'
-                }`}
-              >
-                {alert.name}
-              </p>
+              <div className="flex items-center gap-1.5">
+                {(() => {
+                  const IconComponent = getCategoryIcon(alert.icon);
+                  return (
+                    <IconComponent
+                      className="h-3.5 w-3.5 shrink-0"
+                      style={{ color: alert.color }}
+                    />
+                  );
+                })()}
+                <p
+                  className={`text-sm font-semibold ${
+                    alert.status === 'danger' ? 'text-red-600' : 'text-amber-700'
+                  }`}
+                >
+                  {alert.name}
+                </p>
+              </div>
               <p
                 className={`mt-0.5 text-xs ${
                   alert.status === 'danger' ? 'text-red-500' : 'text-amber-600'

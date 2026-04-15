@@ -6,7 +6,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { deleteCategory } from '@/server/actions/category';
-import { formatPercent } from '@/lib/utils';
+import { formatPercent, getCategoryIcon } from '@/lib/utils';
 import { CategoryForm } from './CategoryForm';
 
 interface Category {
@@ -97,9 +97,17 @@ export function CategoryList({ categories }: CategoryListProps) {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="rounded-lg bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-500">
-                      {cat.icon}
-                    </span>
+                    {(() => {
+                      const IconComponent = getCategoryIcon(cat.icon);
+                      return (
+                        <span
+                          className="flex h-8 w-8 items-center justify-center rounded-lg"
+                          style={{ backgroundColor: `${cat.color}20` }}
+                        >
+                          <IconComponent className="h-4 w-4" style={{ color: cat.color }} />
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <span className="text-sm font-semibold text-slate-900">

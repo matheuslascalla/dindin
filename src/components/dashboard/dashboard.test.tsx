@@ -68,6 +68,7 @@ const baseAlert = {
   id: 'cat-1',
   name: 'Alimentação',
   color: '#FF0000',
+  icon: 'utensils',
   limitPercent: 20,
   currentPercent: 25,
   status: 'danger' as const,
@@ -103,6 +104,7 @@ const baseExpense = {
   value: 500,
   categoryName: 'Alimentação',
   categoryColor: '#6B7280',
+  categoryIcon: 'utensils',
   source: 'expense' as const,
 };
 
@@ -178,6 +180,7 @@ const categoryData = [
     id: 'cat-1',
     name: 'Alimentação',
     color: '#6B7280',
+    icon: 'utensils',
     limitPercent: 20,
     totalValue: 500,
     percentOfIncome: 10,

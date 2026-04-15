@@ -26,7 +26,11 @@ export function TopExpensesList({ expenses }: TopExpensesListProps) {
                 <div className="flex gap-3">
                   <p className="truncate text-sm font-medium text-slate-900">{exp.name}</p>
 
-                  <CategoryBadge color={exp.categoryColor} name={exp.categoryName} />
+                  <CategoryBadge
+                    color={exp.categoryColor}
+                    name={exp.categoryName}
+                    icon={exp.categoryIcon}
+                  />
                 </div>
 
                 <div className="mt-0.5 flex gap-2">

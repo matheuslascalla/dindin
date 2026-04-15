@@ -24,7 +24,8 @@ describe('CategoryList', () => {
   it('renders category rows when categories exist', () => {
     render(<CategoryList categories={[category]} />);
     expect(screen.getByText('Alimentação')).toBeInTheDocument();
-    expect(screen.getByText('utensils')).toBeInTheDocument();
+    // icon is rendered as an SVG, not as text
+    expect(document.querySelector('svg')).toBeInTheDocument();
   });
 
   it('shows limitPercent value', () => {

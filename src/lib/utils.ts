@@ -1,5 +1,56 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import {
+  Home,
+  Target,
+  Sofa,
+  Heart,
+  TrendingUp,
+  BookOpen,
+  ShoppingBag,
+  Car,
+  Utensils,
+  Plane,
+  Activity,
+  Music,
+  Coffee,
+  Film,
+  Globe,
+  Star,
+  Zap,
+  Gift,
+  Shield,
+  Sun,
+  Tag,
+  type LucideIcon,
+} from 'lucide-react';
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  home: Home,
+  target: Target,
+  sofa: Sofa,
+  heart: Heart,
+  'trending-up': TrendingUp,
+  'book-open': BookOpen,
+  'shopping-bag': ShoppingBag,
+  car: Car,
+  utensils: Utensils,
+  plane: Plane,
+  activity: Activity,
+  music: Music,
+  coffee: Coffee,
+  film: Film,
+  globe: Globe,
+  star: Star,
+  zap: Zap,
+  gift: Gift,
+  shield: Shield,
+  sun: Sun,
+};
+
+export function getCategoryIcon(iconName: string): LucideIcon {
+  return ICON_MAP[iconName] ?? Tag;
+}
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

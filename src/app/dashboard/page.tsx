@@ -1,12 +1,13 @@
+import { Suspense, cache } from 'react';
+
 import {
-  getDashboardSummary,
-  getExpensesByCategory,
+  getDashboardSummary as _getDashboardSummary,
+  getExpensesByCategory as _getExpensesByCategory,
   getMonthlyHistory,
   getTopExpenses,
   getExpensesByPerson,
   getCardSummary,
 } from '@/server/actions/dashboard';
-import type { CategoryAlert } from '@/server/actions/dashboard';
 import { SummaryCards } from '@/components/dashboard/SummaryCards';
 import { CategoryDonutChart } from '@/components/dashboard/CategoryDonutChart';
 import { MonthlyBarChart } from '@/components/dashboard/MonthlyBarChart';
@@ -15,65 +16,105 @@ import { TopExpensesList } from '@/components/dashboard/TopExpensesList';
 import { PersonBreakdownCard } from '@/components/dashboard/PersonBreakdownCard';
 import { CardSummaryCard } from '@/components/dashboard/CardSummaryCard';
 import { MonthNavigator } from '@/components/ui/MonthNavigator';
+import {
+  SummaryCardsSkeleton,
+  CategorySectionSkeleton,
+  HistorySectionSkeleton,
+  BottomSectionSkeleton,
+} from '@/components/dashboard/DashboardSkeletons';
+
+// Per-request memoization: duplicate calls with the same args return the cached result
+// getDashboardSummary is called in both SummarySection and BottomSection
+const getDashboardSummary = cache(_getDashboardSummary);
+const getExpensesByCategory = cache(_getExpensesByCategory);
 
 interface DashboardPageProps {
   searchParams: { month?: string };
 }
 
-export default async function DashboardPage({ searchParams }: DashboardPageProps) {
-  const currentMonth = searchParams.month ? new Date(searchParams.month) : new Date();
+// ─── Async sub-components (each fetches its own data) ───────────────────────
 
-  const [summary, categoryBreakdown, monthlyHistory, topExpenses, personBreakdown, cardSummary] =
-    await Promise.all([
-      getDashboardSummary(currentMonth),
-      getExpensesByCategory(currentMonth),
-      getMonthlyHistory(6),
-      getTopExpenses(currentMonth, 5),
-      getExpensesByPerson(currentMonth),
-      getCardSummary(currentMonth),
-    ]);
+async function SummarySection({ month }: { month: Date }) {
+  const summary = await getDashboardSummary(month);
+  return <SummaryCards summary={summary} />;
+}
 
-  const alerts: CategoryAlert[] = categoryBreakdown
+async function CategorySection({ month }: { month: Date }) {
+  const breakdown = await getExpensesByCategory(month);
+
+  const alerts = breakdown
     .filter((b) => b.status !== 'ok')
     .map((b) => ({
       id: b.id,
       name: b.name,
       color: b.color,
+      icon: b.icon,
       limitPercent: b.limitPercent,
       currentPercent: b.percentOfIncome,
       status: b.status as 'warning' | 'danger',
     }));
 
   return (
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="lg:col-span-2">
+        <CategoryDonutChart data={breakdown} />
+      </div>
+      <div>
+        <CategoryAlerts alerts={alerts} />
+      </div>
+    </div>
+  );
+}
+
+async function HistorySection() {
+  const history = await getMonthlyHistory(6);
+  return <MonthlyBarChart data={history} />;
+}
+
+async function BottomSection({ month }: { month: Date }) {
+  const [topExpenses, personBreakdown, cardSummary, summary] = await Promise.all([
+    getTopExpenses(month, 5),
+    getExpensesByPerson(month),
+    getCardSummary(month),
+    getDashboardSummary(month),
+  ]);
+
+  return (
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <TopExpensesList expenses={topExpenses} />
+      <PersonBreakdownCard data={personBreakdown} total={summary.totalExpenses} />
+      <CardSummaryCard data={cardSummary} />
+    </div>
+  );
+}
+
+// ─── Page shell — renders immediately, data streams in ───────────────────────
+
+export default async function DashboardPage({ searchParams }: DashboardPageProps) {
+  const currentMonth = searchParams.month ? new Date(searchParams.month) : new Date();
+
+  return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-slate-900">Dashboard</h1>
         <MonthNavigator currentMonth={currentMonth} basePath="/dashboard" />
       </div>
 
-      {/* Summary metrics */}
-      <SummaryCards summary={summary} />
+      <Suspense fallback={<SummaryCardsSkeleton />}>
+        <SummarySection month={currentMonth} />
+      </Suspense>
 
-      {/* Row 2: Donut + Alerts */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <CategoryDonutChart data={categoryBreakdown} />
-        </div>
-        <div>
-          <CategoryAlerts alerts={alerts} />
-        </div>
-      </div>
+      <Suspense fallback={<CategorySectionSkeleton />}>
+        <CategorySection month={currentMonth} />
+      </Suspense>
 
-      {/* Row 3: Monthly chart */}
-      <MonthlyBarChart data={monthlyHistory} />
+      <Suspense fallback={<HistorySectionSkeleton />}>
+        <HistorySection />
+      </Suspense>
 
-      {/* Row 4: Top expenses + Person + Cards */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <TopExpensesList expenses={topExpenses} />
-        <PersonBreakdownCard data={personBreakdown} total={summary.totalExpenses} />
-        <CardSummaryCard data={cardSummary} />
-      </div>
+      <Suspense fallback={<BottomSectionSkeleton />}>
+        <BottomSection month={currentMonth} />
+      </Suspense>
     </div>
   );
 }
