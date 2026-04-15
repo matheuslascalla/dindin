@@ -1,5 +1,10 @@
 import { getActiveContext, getContextFilter, requireAuth } from './context';
 
+jest.mock('react', () => ({
+  ...jest.requireActual('react'),
+  cache: (fn: unknown) => fn,
+}));
+
 const mockAuth = jest.fn();
 const mockCookiesGet = jest.fn();
 const mockFindUnique = jest.fn();

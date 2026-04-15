@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { cookies } from 'next/headers';
 
 import { auth } from '@/auth';
@@ -16,7 +17,7 @@ export type ActiveContext =
  *  - "house:{houseId}"  → contexto de uma casa específica
  *
  */
-export async function getActiveContext(): Promise<ActiveContext | null> {
+export const getActiveContext = cache(async (): Promise<ActiveContext | null> => {
   const session = await auth();
   if (!session?.user?.id) return null;
 
@@ -44,7 +45,7 @@ export async function getActiveContext(): Promise<ActiveContext | null> {
   }
 
   return null;
-}
+});
 
 /**
  * Retorna o filtro Prisma correto para o contexto ativo.

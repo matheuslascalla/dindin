@@ -4,7 +4,7 @@ import { subMonths, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 import { prisma } from '@/lib/prisma';
-import { getContextFilter } from '@/lib/context';
+import { getActiveContext, getContextFilter } from '@/lib/context';
 import { utcStartOfMonth, utcEndOfMonth, cardExpenseMonthFilter } from '@/lib/utils';
 
 // Counts how many times the weekly occurrence day falls within [effectiveStart, monthEnd]
@@ -367,6 +367,17 @@ export async function getCardSummary(month: Date): Promise<CardSummary[]> {
     totalValue: card.expenses.reduce((s, e) => s + e.value, 0),
     expenseCount: card.expenses.length,
   }));
+}
+
+export async function shouldShowPersonBreakdown(): Promise<boolean> {
+  const ctx = await getActiveContext();
+  if (!ctx || ctx.type === 'personal') return false;
+
+  const memberCount = await prisma.houseMember.count({
+    where: { houseId: ctx.houseId },
+  });
+
+  return memberCount > 1;
 }
 
 export async function getCategoryAlerts(month: Date): Promise<CategoryAlert[]> {

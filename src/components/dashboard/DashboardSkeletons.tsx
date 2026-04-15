@@ -1,5 +1,7 @@
+import { cn } from '@/lib/utils';
+
 function Pulse({ className }: { className: string }) {
-  return <div className={`animate-pulse rounded-xl bg-slate-100 ${className}`} />;
+  return <div className={cn('animate-pulse rounded-xl bg-slate-100', className)} />;
 }
 
 export function SummaryCardsSkeleton() {
@@ -55,10 +57,10 @@ export function HistorySectionSkeleton() {
   );
 }
 
-export function BottomSectionSkeleton() {
+export function BottomSectionSkeleton({ cols = 3 }: { cols?: 2 | 3 }) {
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-      {Array.from({ length: 3 }).map((_, i) => (
+    <div className={cn('grid grid-cols-1 gap-4', cols === 3 ? 'lg:grid-cols-3' : 'lg:grid-cols-2')}>
+      {Array.from({ length: cols }).map((_, i) => (
         <div key={i} className="rounded-2xl bg-white p-5 shadow-card">
           <Pulse className="mb-4 h-4 w-32" />
           <div className="space-y-3">

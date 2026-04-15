@@ -7,6 +7,7 @@ import {
   getTopExpenses,
   getExpensesByPerson,
   getCardSummary,
+  shouldShowPersonBreakdown,
 } from '@/server/actions/dashboard';
 import { SummaryCards } from '@/components/dashboard/SummaryCards';
 import { CategoryDonutChart } from '@/components/dashboard/CategoryDonutChart';
@@ -16,6 +17,7 @@ import { TopExpensesList } from '@/components/dashboard/TopExpensesList';
 import { PersonBreakdownCard } from '@/components/dashboard/PersonBreakdownCard';
 import { CardSummaryCard } from '@/components/dashboard/CardSummaryCard';
 import { MonthNavigator } from '@/components/ui/MonthNavigator';
+import { cn } from '@/lib/utils';
 import {
   SummaryCardsSkeleton,
   CategorySectionSkeleton,
@@ -71,18 +73,31 @@ async function HistorySection() {
   return <MonthlyBarChart data={history} />;
 }
 
-async function BottomSection({ month }: { month: Date }) {
+async function BottomSection({
+  month,
+  showPersonBreakdown,
+}: {
+  month: Date;
+  showPersonBreakdown: boolean;
+}) {
   const [topExpenses, personBreakdown, cardSummary, summary] = await Promise.all([
     getTopExpenses(month, 5),
-    getExpensesByPerson(month),
+    showPersonBreakdown ? getExpensesByPerson(month) : Promise.resolve([]),
     getCardSummary(month),
     getDashboardSummary(month),
   ]);
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+    <div
+      className={cn(
+        'grid grid-cols-1 gap-4',
+        showPersonBreakdown ? 'lg:grid-cols-3' : 'lg:grid-cols-2'
+      )}
+    >
       <TopExpensesList expenses={topExpenses} />
-      <PersonBreakdownCard data={personBreakdown} total={summary.totalExpenses} />
+      {showPersonBreakdown && (
+        <PersonBreakdownCard data={personBreakdown} total={summary.totalExpenses} />
+      )}
       <CardSummaryCard data={cardSummary} />
     </div>
   );
@@ -92,6 +107,7 @@ async function BottomSection({ month }: { month: Date }) {
 
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
   const currentMonth = searchParams.month ? new Date(searchParams.month) : new Date();
+  const showPersonBreakdown = await shouldShowPersonBreakdown();
 
   return (
     <div className="space-y-6">
@@ -112,8 +128,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         <HistorySection />
       </Suspense>
 
-      <Suspense fallback={<BottomSectionSkeleton />}>
-        <BottomSection month={currentMonth} />
+      <Suspense fallback={<BottomSectionSkeleton cols={showPersonBreakdown ? 3 : 2} />}>
+        <BottomSection month={currentMonth} showPersonBreakdown={showPersonBreakdown} />
       </Suspense>
     </div>
   );
