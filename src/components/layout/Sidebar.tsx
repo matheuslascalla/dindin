@@ -14,6 +14,7 @@ import {
   UsersRound,
 } from 'lucide-react';
 
+import { cn } from '@/lib/utils';
 import { signOutAction } from '@/server/actions/auth';
 
 const navItems = [
@@ -69,15 +70,16 @@ export function Sidebar({ user, contextLabel, houseId }: SidebarProps) {
             <Link
               key={href}
               href={href}
-              className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all duration-150 ${
+              className={cn(
+                'flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all duration-150',
                 isActive
                   ? 'bg-teal-50 font-semibold text-teal-700'
                   : 'font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800'
-              } `}
+              )}
             >
               <Icon
                 size={16}
-                className={`shrink-0 ${isActive ? 'text-teal-600' : 'text-slate-400'}`}
+                className={cn('shrink-0', isActive ? 'text-teal-600' : 'text-slate-400')}
               />
               {label}
             </Link>
@@ -87,15 +89,19 @@ export function Sidebar({ user, contextLabel, houseId }: SidebarProps) {
         {houseId && (
           <Link
             href="/contexto/casa/gerenciar"
-            className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all duration-150 ${
+            className={cn(
+              'flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all duration-150',
               pathname === '/contexto/casa/gerenciar'
                 ? 'bg-indigo-50 font-semibold text-indigo-700'
                 : 'font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-800'
-            }`}
+            )}
           >
             <UsersRound
               size={16}
-              className={`shrink-0 ${pathname === '/contexto/casa/gerenciar' ? 'text-indigo-600' : 'text-slate-400'}`}
+              className={cn(
+                'shrink-0',
+                pathname === '/contexto/casa/gerenciar' ? 'text-indigo-600' : 'text-slate-400'
+              )}
             />
             Gerenciar Casa
           </Link>

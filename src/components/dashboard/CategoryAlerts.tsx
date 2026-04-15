@@ -1,6 +1,6 @@
 import { AlertTriangle, AlertCircle, CheckCircle } from 'lucide-react';
 import { ContentCard } from '@/components/ui/ContentCard';
-import { formatPercent, getCategoryIcon } from '@/lib/utils';
+import { cn, formatPercent, getCategoryIcon } from '@/lib/utils';
 import type { CategoryAlert } from '@/server/actions/dashboard';
 
 interface CategoryAlertsProps {
@@ -25,54 +25,48 @@ export function CategoryAlerts({ alerts }: CategoryAlertsProps) {
   return (
     <ContentCard title={`Alertas (${alerts.length})`}>
       <div className="space-y-2">
-        {alerts.map((alert) => (
-          <div
-            key={alert.id}
-            className={`flex items-start gap-2.5 rounded-xl px-3 py-2.5 ${
-              alert.status === 'danger'
-                ? 'border border-red-200 bg-red-50'
-                : 'border border-amber-200 bg-amber-50'
-            } `}
-          >
-            {alert.status === 'danger' ? (
-              <AlertCircle size={14} className="mt-0.5 shrink-0 text-red-500" />
-            ) : (
-              <AlertTriangle size={14} className="mt-0.5 shrink-0 text-amber-600" />
-            )}
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                {(() => {
-                  const IconComponent = getCategoryIcon(alert.icon);
-                  return (
-                    <IconComponent
-                      className="h-3.5 w-3.5 shrink-0"
-                      style={{ color: alert.color }}
-                    />
-                  );
-                })()}
-                <p
-                  className={`text-sm font-semibold ${
-                    alert.status === 'danger' ? 'text-red-600' : 'text-amber-700'
-                  }`}
-                >
-                  {alert.name}
+        {alerts.map((alert) => {
+          const isDanger = alert.status === 'danger';
+          const CategoryIcon = getCategoryIcon(alert.icon);
+
+          return (
+            <div
+              key={alert.id}
+              className={cn(
+                'flex items-start gap-2.5 rounded-xl px-3 py-2.5',
+                isDanger ? 'border border-red-200 bg-red-50' : 'border border-amber-200 bg-amber-50'
+              )}
+            >
+              {isDanger ? (
+                <AlertCircle size={14} className="mt-0.5 shrink-0 text-red-500" />
+              ) : (
+                <AlertTriangle size={14} className="mt-0.5 shrink-0 text-amber-600" />
+              )}
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <CategoryIcon className="h-3.5 w-3.5 shrink-0" style={{ color: alert.color }} />
+                  <p
+                    className={cn(
+                      'text-sm font-semibold',
+                      isDanger ? 'text-red-600' : 'text-amber-700'
+                    )}
+                  >
+                    {alert.name}
+                  </p>
+                </div>
+                <p className={cn('mt-0.5 text-xs', isDanger ? 'text-red-500' : 'text-amber-600')}>
+                  {formatPercent(alert.currentPercent)} de {formatPercent(alert.limitPercent)}{' '}
+                  limite
+                  {isDanger ? ' — ultrapassado' : ' — próximo do limite'}
                 </p>
               </div>
-              <p
-                className={`mt-0.5 text-xs ${
-                  alert.status === 'danger' ? 'text-red-500' : 'text-amber-600'
-                }`}
-              >
-                {formatPercent(alert.currentPercent)} de {formatPercent(alert.limitPercent)} limite
-                {alert.status === 'danger' ? ' — ultrapassado' : ' — próximo do limite'}
-              </p>
+              <div
+                className="ml-auto mt-1 h-2 w-2 shrink-0 rounded-full"
+                style={{ backgroundColor: alert.color }}
+              />
             </div>
-            <div
-              className="ml-auto mt-1 h-2 w-2 shrink-0 rounded-full"
-              style={{ backgroundColor: alert.color }}
-            />
-          </div>
-        ))}
+          );
+        })}
       </div>
     </ContentCard>
   );

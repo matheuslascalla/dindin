@@ -1,14 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, CreditCard, ChevronLeft, ChevronRight } from 'lucide-react';
-import { format, addMonths, subMonths } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { Plus, CreditCard } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { MetricCard } from '@/components/ui/MetricCard';
-import { useRouter } from 'next/navigation';
+import { MonthNavigator } from '@/components/ui/MonthNavigator';
 import { formatCurrency } from '@/lib/utils';
 import { CardItem } from './CardItem';
 import { CardForm } from './CardForm';
@@ -58,18 +56,8 @@ export function CardList({
   categories,
   currentMonth,
 }: CardListProps) {
-  const router = useRouter();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<Card | null>(null);
-
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    const newMonth = direction === 'prev' ? subMonths(currentMonth, 1) : addMonths(currentMonth, 1);
-    const params = new URLSearchParams();
-    params.set('month', newMonth.toISOString());
-    router.push(`/cartoes?${params.toString()}`);
-  };
-
-  const monthLabel = format(currentMonth, 'MMMM yyyy', { locale: ptBR });
 
   return (
     <div className="space-y-6">
@@ -84,26 +72,7 @@ export function CardList({
         </Button>
       </div>
 
-      {/* Month navigator */}
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => navigateMonth('prev')}
-          className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-        >
-          <ChevronLeft size={16} />
-        </button>
-        <span className="min-w-[140px] text-center text-sm font-medium capitalize text-slate-900">
-          {monthLabel}
-        </span>
-        <button
-          type="button"
-          onClick={() => navigateMonth('next')}
-          className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-        >
-          <ChevronRight size={16} />
-        </button>
-      </div>
+      <MonthNavigator currentMonth={currentMonth} basePath="/cartoes" />
 
       <div className="grid grid-cols-2 gap-4">
         <MetricCard

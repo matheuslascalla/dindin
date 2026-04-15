@@ -194,14 +194,9 @@ export function IncomeList({ incomes, totalMonthly }: IncomeListProps) {
             <Button variant="secondary" className="flex-1" onClick={() => setDeletingId(null)}>
               Cancelar
             </Button>
-            <button
-              type="button"
-              disabled={isPending}
-              onClick={handleDelete}
-              className="flex-1 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50"
-            >
+            <Button variant="danger" disabled={isPending} onClick={handleDelete} className="flex-1">
               {isPending ? 'Deletando…' : 'Deletar'}
-            </button>
+            </Button>
           </div>
         </div>
       </Modal>

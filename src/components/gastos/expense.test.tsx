@@ -150,9 +150,9 @@ describe('ExpenseList', () => {
         total={0}
       />
     );
-    // buttons: [0]=Novo Gasto, [1]=ChevronLeft, [2]=ChevronRight, [3]=Novo Gasto (empty state)
+    // buttons: [0]=Novo Gasto, [1]=Hoje, [2]=ChevronLeft, [3]=ChevronRight, [4]=Novo Gasto (empty state)
     const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[1]);
+    fireEvent.click(buttons[2]);
     expect(pushMock).toHaveBeenCalledWith(expect.stringContaining('/gastos?'));
   });
 
@@ -168,7 +168,7 @@ describe('ExpenseList', () => {
       />
     );
     const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[2]);
+    fireEvent.click(buttons[3]);
     expect(pushMock).toHaveBeenCalledWith(expect.stringContaining('/gastos?'));
   });
 
@@ -181,9 +181,9 @@ describe('ExpenseList', () => {
         total={50}
       />
     );
-    // buttons: [0]=Novo Gasto, [1]=prev, [2]=next, [3]=pencil, [4]=trash
+    // buttons: [0]=Novo Gasto, [1]=Hoje, [2]=prev, [3]=next, [4]=pencil, [5]=trash
     const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[4]);
+    fireEvent.click(buttons[5]);
     expect(screen.getByRole('heading', { name: 'Confirmar exclusão' })).toBeInTheDocument();
   });
 
@@ -197,7 +197,7 @@ describe('ExpenseList', () => {
       />
     );
     const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[3]);
+    fireEvent.click(buttons[4]);
     expect(screen.getByRole('heading', { name: 'Editar Gasto' })).toBeInTheDocument();
   });
 
@@ -238,7 +238,7 @@ describe('ExpenseList', () => {
       />
     );
     const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[4]); // open delete modal
+    fireEvent.click(buttons[5]); // open delete modal
     fireEvent.click(screen.getByRole('button', { name: /cancelar/i }));
     expect(screen.queryByRole('heading', { name: 'Confirmar exclusão' })).not.toBeInTheDocument();
   });
@@ -254,7 +254,7 @@ describe('ExpenseList', () => {
       />
     );
     const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[4]); // trash icon
+    fireEvent.click(buttons[5]); // trash icon
     fireEvent.click(screen.getByRole('button', { name: /^Deletar$/i }));
     await waitFor(() => expect(deleteExpense).toHaveBeenCalledWith('exp-1'));
   });

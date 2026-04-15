@@ -85,7 +85,6 @@ export function CardItem({ card, expenses, categories, monthTotal, onEditCard }:
 
   return (
     <div className="overflow-hidden rounded-2xl bg-white shadow-card">
-      {/* Card header */}
       <div className="flex items-center gap-4 px-6 py-4">
         <button
           type="button"
@@ -139,7 +138,6 @@ export function CardItem({ card, expenses, categories, monthTotal, onEditCard }:
         </div>
       </div>
 
-      {/* Expanded expenses */}
       {isExpanded && (
         <div className="border-t border-slate-100">
           {expenses.length === 0 ? (
@@ -243,7 +241,6 @@ export function CardItem({ card, expenses, categories, monthTotal, onEditCard }:
         </div>
       )}
 
-      {/* Add expense modal */}
       <Modal
         isOpen={isAddExpenseOpen}
         onClose={() => setIsAddExpenseOpen(false)}
@@ -257,7 +254,6 @@ export function CardItem({ card, expenses, categories, monthTotal, onEditCard }:
         />
       </Modal>
 
-      {/* Edit expense modal */}
       <Modal
         isOpen={!!editingExpense}
         onClose={() => setEditingExpense(null)}
@@ -340,7 +336,6 @@ export function CardItem({ card, expenses, categories, monthTotal, onEditCard }:
         </div>
       </Modal>
 
-      {/* Delete card modal */}
       <Modal
         isOpen={isDeletingCard}
         onClose={() => setIsDeletingCard(false)}

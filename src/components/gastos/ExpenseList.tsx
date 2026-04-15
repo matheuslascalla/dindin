@@ -1,15 +1,13 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Pencil, Trash2, Plus, ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react';
-import { format, addMonths, subMonths } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { Pencil, Trash2, Plus, ShoppingCart } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { CategoryBadge } from '@/components/ui/CategoryBadge';
-import { useRouter } from 'next/navigation';
+import { MonthNavigator } from '@/components/ui/MonthNavigator';
 import { deleteExpense } from '@/server/actions/expense';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { ExpenseForm } from './ExpenseForm';
@@ -40,7 +38,6 @@ interface ExpenseListProps {
 }
 
 export function ExpenseList({ expenses, categories, currentMonth, total }: ExpenseListProps) {
-  const router = useRouter();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -53,15 +50,6 @@ export function ExpenseList({ expenses, categories, currentMonth, total }: Expen
       setDeletingId(null);
     });
   };
-
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    const newMonth = direction === 'prev' ? subMonths(currentMonth, 1) : addMonths(currentMonth, 1);
-    const params = new URLSearchParams();
-    params.set('month', newMonth.toISOString());
-    router.push(`/gastos?${params.toString()}`);
-  };
-
-  const monthLabel = format(currentMonth, 'MMMM yyyy', { locale: ptBR });
 
   return (
     <div className="space-y-6">
@@ -76,26 +64,7 @@ export function ExpenseList({ expenses, categories, currentMonth, total }: Expen
         </Button>
       </div>
 
-      {/* Month navigator */}
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => navigateMonth('prev')}
-          className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-        >
-          <ChevronLeft size={16} />
-        </button>
-        <span className="min-w-[140px] text-center text-sm font-medium capitalize text-slate-900">
-          {monthLabel}
-        </span>
-        <button
-          type="button"
-          onClick={() => navigateMonth('next')}
-          className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-        >
-          <ChevronRight size={16} />
-        </button>
-      </div>
+      <MonthNavigator currentMonth={currentMonth} basePath="/gastos" />
 
       <MetricCard
         label="Total do Mês"
@@ -221,14 +190,9 @@ export function ExpenseList({ expenses, categories, currentMonth, total }: Expen
             <Button variant="secondary" className="flex-1" onClick={() => setDeletingId(null)}>
               Cancelar
             </Button>
-            <button
-              type="button"
-              disabled={isPending}
-              onClick={handleDelete}
-              className="flex-1 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50"
-            >
+            <Button variant="danger" disabled={isPending} onClick={handleDelete} className="flex-1">
               {isPending ? 'Deletando…' : 'Deletar'}
-            </button>
+            </Button>
           </div>
         </div>
       </Modal>

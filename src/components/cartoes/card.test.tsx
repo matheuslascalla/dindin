@@ -516,8 +516,8 @@ describe('CardList interactions', () => {
         currentMonth={new Date('2024-03-01')}
       />
     );
-    // buttons: [0]=Novo Cartão, [1]=ChevronLeft, [2]=ChevronRight
-    fireEvent.click(screen.getAllByRole('button')[1]);
+    // buttons: [0]=Novo Cartão, [1]=Hoje, [2]=ChevronLeft, [3]=ChevronRight
+    fireEvent.click(screen.getAllByRole('button')[2]);
     expect(pushMock).toHaveBeenCalledWith(expect.stringContaining('/cartoes?'));
   });
 
@@ -534,7 +534,7 @@ describe('CardList interactions', () => {
         currentMonth={new Date('2024-03-01')}
       />
     );
-    fireEvent.click(screen.getAllByRole('button')[2]);
+    fireEvent.click(screen.getAllByRole('button')[3]);
     expect(pushMock).toHaveBeenCalledWith(expect.stringContaining('/cartoes?'));
   });
 
@@ -597,9 +597,9 @@ describe('CardList interactions', () => {
       />
     );
     // CardList renders CardItem which has edit button at index [2]
-    // buttons: [0]=Novo Cartão, [1]=prev, [2]=next, [3]=expand, [4]=Lançamento, [5]=pencil, [6]=trash
+    // buttons: [0]=Novo Cartão, [1]=Hoje, [2]=prev, [3]=next, [4]=expand, [5]=Lançamento, [6]=pencil, [7]=trash
     const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[5]); // pencil = onEditCard
+    fireEvent.click(buttons[6]); // pencil = onEditCard
     expect(screen.getByRole('heading', { name: 'Editar Cartão' })).toBeInTheDocument();
   });
 });
