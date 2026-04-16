@@ -3,6 +3,7 @@ import {
   updateExpense,
   deleteExpense,
   listExpenses,
+  listAllExpenses,
   getExpenseTotal,
 } from './expense';
 import { utcStartOfMonth, utcEndOfMonth } from '@/lib/utils';
@@ -18,6 +19,9 @@ jest.mock('@/lib/prisma', () => ({
       findMany: jest.fn(),
       aggregate: jest.fn(),
     },
+    cardExpense: {
+      findMany: jest.fn(),
+    },
   },
 }));
 jest.mock('next/cache', () => ({ revalidatePath: jest.fn() }));
@@ -26,6 +30,7 @@ jest.mock('@/lib/context', () => ({
 }));
 
 const db = prisma.expense as jest.Mocked<typeof prisma.expense>;
+const cardDb = prisma.cardExpense as jest.Mocked<typeof prisma.cardExpense>;
 const FILTER = { userId: 'user-test', houseId: null };
 
 beforeEach(() => jest.clearAllMocks());
@@ -34,14 +39,43 @@ const validExpense = {
   name: 'Mercado',
   value: 150,
   date: new Date('2024-03-15T00:00:00Z'),
+  paymentMethod: 'PIX' as const,
   expenseTypeId: 'type-1',
 };
+
+const expenseType = { id: 'type-1', name: 'Alimentação', color: '#6B7280', icon: 'ShoppingCart' };
 
 const createdExpense = {
   id: 'exp-1',
   ...validExpense,
   expenseType: { id: 'type-1', name: 'Alimentação', color: '#6B7280' },
   createdAt: new Date(),
+};
+
+const rawExpense = {
+  id: 'exp-1',
+  name: 'Mercado',
+  value: 150,
+  date: new Date('2024-03-15T00:00:00Z'),
+  description: null,
+  person: null,
+  paymentMethod: 'PIX',
+  expenseType,
+};
+
+const rawCardExpense = {
+  id: 'ce-1',
+  name: 'Netflix',
+  value: 40,
+  date: new Date('2024-03-20T00:00:00Z'),
+  description: null,
+  person: null,
+  recurrence: 'monthly',
+  installmentNumber: null,
+  installmentTotal: null,
+  installmentGroupId: null,
+  expenseType,
+  card: { id: 'card-1', name: 'Nubank' },
 };
 
 describe('createExpense', () => {
@@ -113,6 +147,116 @@ describe('listExpenses', () => {
       include: { expenseType: true },
       orderBy: { date: 'desc' },
     });
+  });
+});
+
+describe('listAllExpenses', () => {
+  const month = new Date('2024-03-01T00:00:00Z');
+
+  beforeEach(() => {
+    (db.findMany as jest.Mock).mockResolvedValue([]);
+    (cardDb.findMany as jest.Mock).mockResolvedValue([]);
+  });
+
+  it('merges and sorts expenses and card expenses by date descending', async () => {
+    (db.findMany as jest.Mock).mockResolvedValue([rawExpense]);
+    (cardDb.findMany as jest.Mock).mockResolvedValue([rawCardExpense]);
+
+    const result = await listAllExpenses({ month });
+
+    expect(result.total).toBe(2);
+    expect(result.totalValue).toBe(190);
+    expect(result.items[0].id).toBe('ce-1'); // newer date first
+    expect(result.items[1].id).toBe('exp-1');
+  });
+
+  it('maps source field correctly', async () => {
+    (db.findMany as jest.Mock).mockResolvedValue([rawExpense]);
+    (cardDb.findMany as jest.Mock).mockResolvedValue([rawCardExpense]);
+
+    const result = await listAllExpenses({ month });
+
+    const expense = result.items.find((i) => i.id === 'exp-1');
+    const card = result.items.find((i) => i.id === 'ce-1');
+    expect(expense?.source).toBe('expense');
+    expect(expense?.paymentMethod).toBe('PIX');
+    expect(card?.source).toBe('card');
+    expect(card?.cardName).toBe('Nubank');
+  });
+
+  it('skips card query when paymentMethod is PIX', async () => {
+    (db.findMany as jest.Mock).mockResolvedValue([rawExpense]);
+
+    await listAllExpenses({ month, paymentMethod: 'PIX' });
+
+    expect(db.findMany).toHaveBeenCalled();
+    expect(cardDb.findMany).not.toHaveBeenCalled();
+  });
+
+  it('skips card query when paymentMethod is MONEY', async () => {
+    await listAllExpenses({ month, paymentMethod: 'MONEY' });
+
+    expect(cardDb.findMany).not.toHaveBeenCalled();
+  });
+
+  it('skips expense query when paymentMethod is CARD', async () => {
+    (cardDb.findMany as jest.Mock).mockResolvedValue([rawCardExpense]);
+
+    await listAllExpenses({ month, paymentMethod: 'CARD' });
+
+    expect(db.findMany).not.toHaveBeenCalled();
+    expect(cardDb.findMany).toHaveBeenCalled();
+  });
+
+  it('applies categoryId filter to expense query', async () => {
+    await listAllExpenses({ month, categoryId: 'cat-1' });
+
+    expect(db.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ expenseTypeId: 'cat-1' }) })
+    );
+  });
+
+  it('applies person filter to both queries', async () => {
+    await listAllExpenses({ month, person: 'João' });
+
+    expect(db.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ person: 'João' }) })
+    );
+    expect(cardDb.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ person: 'João' }) })
+    );
+  });
+
+  it('paginates results correctly', async () => {
+    const manyExpenses = Array.from({ length: 25 }, (_, i) => ({
+      ...rawExpense,
+      id: `exp-${i}`,
+      date: new Date(`2024-03-${String(i + 1).padStart(2, '0')}T00:00:00Z`),
+    }));
+    (db.findMany as jest.Mock).mockResolvedValue(manyExpenses);
+
+    const page1 = await listAllExpenses({ month, page: 1, pageSize: 10 });
+    const page2 = await listAllExpenses({ month, page: 2, pageSize: 10 });
+
+    expect(page1.total).toBe(25);
+    expect(page1.pageCount).toBe(3);
+    expect(page1.items).toHaveLength(10);
+    expect(page2.items).toHaveLength(10);
+  });
+
+  it('returns empty result when no expenses exist', async () => {
+    const result = await listAllExpenses({ month });
+
+    expect(result.items).toHaveLength(0);
+    expect(result.total).toBe(0);
+    expect(result.totalValue).toBe(0);
+    expect(result.pageCount).toBe(0);
+  });
+
+  it('uses current month when no month is provided', async () => {
+    await listAllExpenses({});
+
+    expect(db.findMany).toHaveBeenCalled();
   });
 });
 

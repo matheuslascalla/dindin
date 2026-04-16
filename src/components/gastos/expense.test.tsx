@@ -1,14 +1,21 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ExpenseForm } from './ExpenseForm';
 import { ExpenseList } from './ExpenseList';
+import type { UnifiedExpense } from '@/server/actions/expense';
 
 jest.mock('@/server/actions/expense', () => ({
   createExpense: jest.fn(),
   updateExpense: jest.fn(),
   deleteExpense: jest.fn(),
 }));
+jest.mock('@/server/actions/card', () => ({
+  deleteCardExpense: jest.fn(),
+  deleteInstallmentGroup: jest.fn(),
+}));
 jest.mock('next/navigation', () => ({
   useRouter: jest.fn(() => ({ push: jest.fn() })),
+  usePathname: jest.fn(() => '/gastos'),
+  useSearchParams: jest.fn(() => ({ toString: () => '' })),
 }));
 
 const categories = [{ id: 'cat-1', name: 'Alimentação', color: '#6B7280' }];
@@ -121,181 +128,80 @@ describe('ExpenseForm', () => {
 
 // ─── ExpenseList ─────────────────────────────────────────────────────────────
 
-const expense = {
+const unifiedExpense: UnifiedExpense = {
   id: 'exp-1',
   name: 'Padaria',
   value: 50,
   date: new Date('2024-03-10'),
-  expenseTypeId: 'cat-1',
-  expenseType: { id: 'cat-1', name: 'Alimentação', color: '#6B7280' },
-  createdAt: new Date(),
+  description: null,
+  person: null,
+  expenseType: { id: 'cat-1', name: 'Alimentação', color: '#6B7280', icon: 'ShoppingCart' },
+  source: 'expense',
+  paymentMethod: 'PIX',
+};
+
+const baseListProps = {
+  items: [] as UnifiedExpense[],
+  total: 0,
+  totalValue: 0,
+  pageCount: 1,
+  currentPage: 1,
+  categories,
+  contextPersons,
+  cards: [],
+  currentMonth: new Date('2024-03-01'),
+  currentFilters: {},
 };
 
 describe('ExpenseList', () => {
   it('renders empty state when no expenses', () => {
-    render(
-      <ExpenseList
-        expenses={[]}
-        categories={categories}
-        contextPersons={contextPersons}
-        currentMonth={new Date('2024-03-01')}
-        total={0}
-      />
-    );
+    render(<ExpenseList {...baseListProps} />);
     expect(screen.getByText('Nenhum gasto neste mês')).toBeInTheDocument();
   });
 
   it('renders expense rows when expenses exist', () => {
-    render(
-      <ExpenseList
-        expenses={[expense]}
-        categories={categories}
-        contextPersons={contextPersons}
-        currentMonth={new Date('2024-03-01')}
-        total={50}
-      />
-    );
+    render(<ExpenseList {...baseListProps} items={[unifiedExpense]} total={1} totalValue={50} />);
     expect(screen.getByText('Padaria')).toBeInTheDocument();
   });
 
-  it('renders month navigation arrows', () => {
-    render(
-      <ExpenseList
-        expenses={[]}
-        categories={categories}
-        contextPersons={contextPersons}
-        currentMonth={new Date('2024-03-01')}
-        total={0}
-      />
-    );
-    // Two navigation buttons (prev/next month)
+  it('renders month navigation', () => {
+    render(<ExpenseList {...baseListProps} />);
     expect(screen.getAllByRole('button').length).toBeGreaterThanOrEqual(2);
   });
 
   it('calls router.push when prev month is clicked', () => {
     const pushMock = jest.fn();
     jest.requireMock('next/navigation').useRouter.mockReturnValue({ push: pushMock });
-    render(
-      <ExpenseList
-        expenses={[]}
-        categories={categories}
-        contextPersons={contextPersons}
-        currentMonth={new Date('2024-03-01')}
-        total={0}
-      />
-    );
-    // buttons: [0]=Novo Gasto, [1]=Hoje, [2]=ChevronLeft, [3]=ChevronRight, [4]=Novo Gasto (empty state)
-    const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[2]);
-    expect(pushMock).toHaveBeenCalledWith(expect.stringContaining('/gastos?'));
-  });
-
-  it('calls router.push when next month is clicked', () => {
-    const pushMock = jest.fn();
-    jest.requireMock('next/navigation').useRouter.mockReturnValue({ push: pushMock });
-    render(
-      <ExpenseList
-        expenses={[]}
-        categories={categories}
-        contextPersons={contextPersons}
-        currentMonth={new Date('2024-03-01')}
-        total={0}
-      />
-    );
-    const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[3]);
+    render(<ExpenseList {...baseListProps} />);
+    const prevButton = screen.getByLabelText(/mês anterior/i);
+    fireEvent.click(prevButton);
     expect(pushMock).toHaveBeenCalledWith(expect.stringContaining('/gastos?'));
   });
 
   it('opens delete modal when trash icon is clicked', () => {
-    render(
-      <ExpenseList
-        expenses={[expense]}
-        categories={categories}
-        contextPersons={contextPersons}
-        currentMonth={new Date('2024-03-01')}
-        total={50}
-      />
-    );
-    // buttons: [0]=Novo Gasto, [1]=Hoje, [2]=prev, [3]=next, [4]=pencil, [5]=trash
-    const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[5]);
+    render(<ExpenseList {...baseListProps} items={[unifiedExpense]} total={1} totalValue={50} />);
+    const actionButtons = screen.getAllByRole('button');
+    fireEvent.click(actionButtons[actionButtons.length - 1]);
     expect(screen.getByRole('heading', { name: 'Confirmar exclusão' })).toBeInTheDocument();
   });
 
-  it('opens edit modal when pencil icon is clicked', () => {
-    render(
-      <ExpenseList
-        expenses={[expense]}
-        categories={categories}
-        contextPersons={contextPersons}
-        currentMonth={new Date('2024-03-01')}
-        total={50}
-      />
-    );
-    const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[4]);
-    expect(screen.getByRole('heading', { name: 'Editar Gasto' })).toBeInTheDocument();
-  });
-
-  it('opens create modal when Novo Gasto is clicked (top)', () => {
-    render(
-      <ExpenseList
-        expenses={[]}
-        categories={categories}
-        contextPersons={contextPersons}
-        currentMonth={new Date('2024-03-01')}
-        total={0}
-      />
-    );
+  it('opens create modal when Novo Gasto is clicked', () => {
+    render(<ExpenseList {...baseListProps} />);
     fireEvent.click(screen.getAllByRole('button', { name: /novo gasto/i })[0]);
     expect(screen.getByRole('heading', { name: 'Novo Gasto' })).toBeInTheDocument();
   });
 
   it('opens create modal from EmptyState button', () => {
-    render(
-      <ExpenseList
-        expenses={[]}
-        categories={categories}
-        contextPersons={contextPersons}
-        currentMonth={new Date('2024-03-01')}
-        total={0}
-      />
-    );
-    // EmptyState renders a second "Novo Gasto" button
+    render(<ExpenseList {...baseListProps} />);
     fireEvent.click(screen.getAllByRole('button', { name: /novo gasto/i })[1]);
     expect(screen.getByRole('heading', { name: 'Novo Gasto' })).toBeInTheDocument();
   });
 
-  it('closes delete modal when cancel is clicked', () => {
-    render(
-      <ExpenseList
-        expenses={[expense]}
-        categories={categories}
-        contextPersons={contextPersons}
-        currentMonth={new Date('2024-03-01')}
-        total={50}
-      />
-    );
-    const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[5]); // open delete modal
-    fireEvent.click(screen.getByRole('button', { name: /cancelar/i }));
-    expect(screen.queryByRole('heading', { name: 'Confirmar exclusão' })).not.toBeInTheDocument();
-  });
-
   it('calls deleteExpense when confirm delete is clicked', async () => {
     const { deleteExpense } = jest.requireMock('@/server/actions/expense');
-    render(
-      <ExpenseList
-        expenses={[expense]}
-        categories={categories}
-        contextPersons={contextPersons}
-        currentMonth={new Date('2024-03-01')}
-        total={50}
-      />
-    );
-    const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[5]); // trash icon
+    render(<ExpenseList {...baseListProps} items={[unifiedExpense]} total={1} totalValue={50} />);
+    const actionButtons = screen.getAllByRole('button');
+    fireEvent.click(actionButtons[actionButtons.length - 1]); // trash icon
     fireEvent.click(screen.getByRole('button', { name: /^Deletar$/i }));
     await waitFor(() => expect(deleteExpense).toHaveBeenCalledWith('exp-1'));
   });

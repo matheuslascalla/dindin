@@ -1,39 +1,40 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { PersonToggle } from '@/components/ui/PersonToggle';
+import { createExpense, updateExpense } from '@/server/actions/expense';
 import { createCardExpense, updateCardExpense } from '@/server/actions/card';
 import type { ContextPersons } from '@/server/actions/house';
+import type { UnifiedExpense } from '@/server/actions/expense';
 import { cn, toDateInputValue, resolvePersonFromContext } from '@/lib/utils';
+import { PAYMENT_METHOD_OPTIONS } from '@/lib/constants/payments';
+import type { PaymentMethod } from '@/lib/constants/payments';
 
 type Kind = 'none' | 'monthly' | 'installment';
 
 interface Category {
   id: string;
   name: string;
+  color: string;
 }
 
-interface CardExpenseFormProps {
-  cardId: string;
+interface Card {
+  id: string;
+  name: string;
+}
+
+interface UnifiedExpenseFormProps {
   categories: Category[];
   contextPersons: ContextPersons;
+  cards: Card[];
   onSuccess: () => void;
   onCancel: () => void;
-  initial?: {
-    id: string;
-    name: string;
-    value: number;
-    date: Date;
-    description?: string | null;
-    person?: string | null;
-    expenseTypeId: string;
-    recurrence?: string | null;
-    installmentGroupId?: string | null;
-  } | null;
+  initial?: UnifiedExpense | null;
 }
 
 const KIND_OPTIONS: { value: Kind; label: string }[] = [
@@ -42,16 +43,28 @@ const KIND_OPTIONS: { value: Kind; label: string }[] = [
   { value: 'installment', label: 'Parcelado' },
 ];
 
-export function CardExpenseForm({
-  cardId,
+function resolveInitialPaymentMethod(initial?: UnifiedExpense | null): PaymentMethod {
+  if (!initial) return 'PIX';
+  if (initial.source === 'card') return 'CARD';
+  return (initial.paymentMethod as PaymentMethod) ?? 'PIX';
+}
+
+export function UnifiedExpenseForm({
   categories,
   contextPersons,
+  cards,
   onSuccess,
   onCancel,
   initial,
-}: CardExpenseFormProps) {
+}: UnifiedExpenseFormProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+
+  const isEditing = !!initial;
+
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
+    resolveInitialPaymentMethod(initial)
+  );
 
   const initialKind: Kind =
     initial?.recurrence === 'monthly'
@@ -69,11 +82,17 @@ export function CardExpenseForm({
     date: initial?.date ? toDateInputValue(initial.date) : toDateInputValue(),
     description: initial?.description ?? '',
     person: initial?.person ?? '',
-    expenseTypeId: initial?.expenseTypeId ?? '',
+    expenseTypeId: initial?.expenseType?.id ?? '',
+    cardId: initial?.cardId ?? cards[0]?.id ?? '',
   });
 
   const categoryOptions = categories.map((c) => ({ value: c.id, label: c.name }));
-  const isEditing = !!initial;
+  const cardOptions = cards.map((c) => ({ value: c.id, label: c.name }));
+
+  const handlePaymentMethodChange = (method: PaymentMethod) => {
+    if (isEditing) return;
+    setPaymentMethod(method);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,37 +103,63 @@ export function CardExpenseForm({
       setError('Valor deve ser maior que zero.');
       return;
     }
-    if (kind === 'installment' && installmentCount < 2) {
-      setError('Número de parcelas deve ser pelo menos 2.');
-      return;
+
+    if (paymentMethod === 'CARD') {
+      if (!form.cardId) {
+        setError('Selecione um cartão.');
+        return;
+      }
+      if (kind === 'installment' && installmentCount < 2) {
+        setError('Número de parcelas deve ser pelo menos 2.');
+        return;
+      }
     }
 
     startTransition(async () => {
       try {
         const person = resolvePersonFromContext(contextPersons, form.person);
 
-        if (isEditing) {
-          await updateCardExpense(initial.id, {
-            name: form.name,
-            value,
-            date: new Date(form.date),
-            description: form.description || undefined,
-            person,
-            expenseTypeId: form.expenseTypeId,
-          });
+        if (paymentMethod === 'CARD') {
+          if (isEditing && initial?.source === 'card') {
+            await updateCardExpense(initial.id, {
+              name: form.name,
+              value,
+              date: new Date(form.date),
+              description: form.description || undefined,
+              person,
+              expenseTypeId: form.expenseTypeId,
+            });
+          } else {
+            await createCardExpense({
+              cardId: form.cardId,
+              name: form.name,
+              value,
+              date: new Date(form.date),
+              description: form.description || undefined,
+              person,
+              expenseTypeId: form.expenseTypeId,
+              kind,
+              installmentCount: kind === 'installment' ? installmentCount : undefined,
+            });
+          }
         } else {
-          await createCardExpense({
-            cardId,
+          const data = {
             name: form.name,
             value,
             date: new Date(form.date),
             description: form.description || undefined,
             person,
             expenseTypeId: form.expenseTypeId,
-            kind,
-            installmentCount: kind === 'installment' ? installmentCount : undefined,
-          });
+            paymentMethod,
+          };
+
+          if (isEditing && initial?.source === 'expense') {
+            await updateExpense(initial.id, data);
+          } else {
+            await createExpense(data);
+          }
         }
+
         onSuccess();
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Erro ao salvar.');
@@ -124,8 +169,52 @@ export function CardExpenseForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Tipo de lançamento (apenas na criação) */}
-      {!isEditing && (
+      <div className="space-y-1.5">
+        <p className="text-sm font-medium text-slate-600">Meio de pagamento</p>
+        <div className="flex gap-1 rounded-lg bg-slate-100 p-1">
+          {PAYMENT_METHOD_OPTIONS.map(({ value, label, icon: Icon, activeClass }) => {
+            const isCardWithNoCards = value === 'CARD' && cards.length === 0 && !isEditing;
+            const isDisabled = isEditing || isCardWithNoCards;
+            const isActive = paymentMethod === value;
+
+            return (
+              <button
+                key={value}
+                type="button"
+                disabled={isDisabled}
+                onClick={() => handlePaymentMethodChange(value)}
+                title={isCardWithNoCards ? 'Cadastre um cartão primeiro' : undefined}
+                className={cn(
+                  'flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-all',
+                  isActive ? activeClass : 'text-slate-500 hover:text-slate-700',
+                  isDisabled && 'cursor-not-allowed opacity-40'
+                )}
+              >
+                <Icon size={12} />
+                {label}
+              </button>
+            );
+          })}
+        </div>
+        {cards.length === 0 && !isEditing && (
+          <p className="text-xs text-slate-400">
+            Para lançar no cartão, cadastre um cartão na página de Cartões.
+          </p>
+        )}
+      </div>
+
+      {paymentMethod === 'CARD' && (
+        <Select
+          label="Cartão"
+          options={cardOptions}
+          placeholder="Selecionar cartão"
+          value={form.cardId}
+          onChange={(e) => setForm({ ...form, cardId: e.target.value })}
+          required
+        />
+      )}
+
+      {paymentMethod === 'CARD' && !isEditing && (
         <div className="space-y-1.5">
           <p className="text-sm font-medium text-slate-600">Tipo</p>
           <div className="flex gap-1 rounded-lg bg-slate-100 p-1">
@@ -145,11 +234,13 @@ export function CardExpenseForm({
               </button>
             ))}
           </div>
+
           {kind === 'monthly' && (
             <p className="rounded-lg bg-teal-50 px-3 py-2 text-xs text-teal-700">
               Este lançamento aparecerá automaticamente em todos os meses.
             </p>
           )}
+
           {kind === 'installment' && (
             <div className="space-y-1">
               <Input
@@ -173,7 +264,7 @@ export function CardExpenseForm({
 
       <Input
         label="Nome"
-        placeholder="Ex: Netflix"
+        placeholder="Ex: Conta de luz"
         value={form.name}
         onChange={(e) => setForm({ ...form, name: e.target.value })}
         required
@@ -191,7 +282,7 @@ export function CardExpenseForm({
           required
         />
         <Input
-          label={kind === 'installment' ? 'Data da 1ª parcela' : 'Data'}
+          label={paymentMethod === 'CARD' && kind === 'installment' ? 'Data da 1ª parcela' : 'Data'}
           type="date"
           value={form.date}
           onChange={(e) => setForm({ ...form, date: e.target.value })}
@@ -205,6 +296,7 @@ export function CardExpenseForm({
         placeholder="Selecionar categoria"
         value={form.expenseTypeId}
         onChange={(e) => setForm({ ...form, expenseTypeId: e.target.value })}
+        required
       />
 
       {contextPersons.type === 'house' && (
@@ -219,7 +311,7 @@ export function CardExpenseForm({
       <Textarea
         label="Descrição (opcional)"
         rows={2}
-        placeholder="Ex: Plano família, 4 usuários"
+        placeholder="Observações..."
         value={form.description}
         onChange={(e) => setForm({ ...form, description: e.target.value })}
       />
@@ -237,9 +329,9 @@ export function CardExpenseForm({
         <Button type="submit" loading={isPending} className="flex-1">
           {isEditing
             ? 'Salvar'
-            : kind === 'installment'
+            : paymentMethod === 'CARD' && kind === 'installment'
               ? `Criar ${installmentCount}x`
-              : 'Adicionar'}
+              : 'Criar'}
         </Button>
       </div>
     </form>

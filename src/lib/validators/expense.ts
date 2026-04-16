@@ -6,6 +6,7 @@ export const CreateExpenseSchema = z.object({
   date: z.coerce.date(),
   description: z.string().optional(),
   person: z.string().optional(),
+  paymentMethod: z.enum(['PIX', 'MONEY']).default('PIX'),
   expenseTypeId: z.string().min(1, 'Categoria é obrigatória'),
 });
 

@@ -73,6 +73,7 @@ export function ExpenseForm({
           description: form.description || undefined,
           person,
           expenseTypeId: form.expenseTypeId,
+          paymentMethod: 'PIX' as const,
         };
         if (initial) {
           await updateExpense(initial.id, data);

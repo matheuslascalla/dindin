@@ -41,6 +41,7 @@ export function MonthNavigator({ currentMonth, basePath }: MonthNavigatorProps) 
       <div className="flex items-center gap-1">
         <button
           type="button"
+          aria-label="Mês anterior"
           onClick={() => navigate('prev')}
           className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
         >
@@ -53,6 +54,7 @@ export function MonthNavigator({ currentMonth, basePath }: MonthNavigatorProps) 
 
         <button
           type="button"
+          aria-label="Próximo mês"
           onClick={() => navigate('next')}
           className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
         >

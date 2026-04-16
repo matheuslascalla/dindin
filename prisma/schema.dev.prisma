@@ -128,6 +128,7 @@ model Expense {
   date          DateTime
   description   String?
   person        String?
+  paymentMethod String      @default("PIX")
   expenseTypeId String
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
