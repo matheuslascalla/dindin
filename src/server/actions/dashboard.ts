@@ -380,6 +380,119 @@ export async function shouldShowPersonBreakdown(): Promise<boolean> {
   return memberCount > 1;
 }
 
+export interface SubcategoryBreakdown {
+  id: string;
+  name: string;
+  totalValue: number;
+  percentOfCategory: number;
+}
+
+export interface CategoryDetailBreakdown extends CategoryBreakdown {
+  subcategories: SubcategoryBreakdown[];
+  directValue: number;
+  percentOfLimit: number;
+}
+
+export async function getExpensesByCategoryWithSubcategories(
+  month: Date
+): Promise<CategoryDetailBreakdown[]> {
+  const filter = await getContextFilter();
+  const start = utcStartOfMonth(month);
+  const end = utcEndOfMonth(month);
+  const cardFilter = cardExpenseMonthFilter(start, end);
+
+  const [categories, monthlyIncomeAgg, eventualIncomeAgg, weeklyIncomes] = await Promise.all([
+    prisma.expenseType.findMany({
+      where: filter,
+      include: {
+        subcategories: { where: filter, orderBy: { name: 'asc' } },
+        expenses: {
+          where: { date: { gte: start, lte: end } },
+          select: { value: true, subcategoryId: true },
+        },
+        cardExpenses: {
+          where: { card: filter, ...cardFilter },
+          select: { value: true, subcategoryId: true },
+        },
+      },
+    }),
+    prisma.income.aggregate({
+      _sum: { value: true },
+      where: { ...filter, active: true, recurrence: 'monthly', startDate: { lte: end } },
+    }),
+    prisma.income.aggregate({
+      _sum: { value: true },
+      where: {
+        ...filter,
+        active: true,
+        recurrence: 'eventual',
+        startDate: { gte: start, lte: end },
+      },
+    }),
+    prisma.income.findMany({
+      where: { ...filter, active: true, recurrence: 'weekly', startDate: { lte: end } },
+      select: { value: true, startDate: true },
+    }),
+  ]);
+
+  const monthlyIncome = monthlyIncomeAgg._sum.value ?? 0;
+  const eventualIncome = eventualIncomeAgg._sum.value ?? 0;
+  const weeklyIncome = sumWeeklyIncome(weeklyIncomes, start, end);
+  const totalIncome = monthlyIncome + eventualIncome + weeklyIncome;
+
+  return categories.map((cat) => {
+    let totalValue = 0;
+    let directValue = 0;
+    const subcategoryMap = new Map<string, number>();
+    const validSubIds = new Set(cat.subcategories.map((s) => s.id));
+
+    for (const e of cat.expenses) {
+      totalValue += e.value;
+      if (e.subcategoryId && validSubIds.has(e.subcategoryId)) {
+        subcategoryMap.set(e.subcategoryId, (subcategoryMap.get(e.subcategoryId) ?? 0) + e.value);
+      } else {
+        directValue += e.value;
+      }
+    }
+
+    for (const e of cat.cardExpenses) {
+      totalValue += e.value;
+      if (e.subcategoryId && validSubIds.has(e.subcategoryId)) {
+        subcategoryMap.set(e.subcategoryId, (subcategoryMap.get(e.subcategoryId) ?? 0) + e.value);
+      } else {
+        directValue += e.value;
+      }
+    }
+
+    const percentOfIncome = totalIncome > 0 ? (totalValue / totalIncome) * 100 : 0;
+    const percentOfLimit = cat.limitPercent > 0 ? (percentOfIncome / cat.limitPercent) * 100 : 0;
+
+    const subcategories: SubcategoryBreakdown[] = cat.subcategories.map((sub) => {
+      const subTotal = subcategoryMap.get(sub.id) ?? 0;
+      return {
+        id: sub.id,
+        name: sub.name,
+        totalValue: subTotal,
+        percentOfCategory: totalValue > 0 ? (subTotal / totalValue) * 100 : 0,
+      };
+    });
+
+    return {
+      id: cat.id,
+      name: cat.name,
+      color: cat.color,
+      icon: cat.icon,
+      limitPercent: cat.limitPercent,
+      totalValue,
+      percentOfIncome,
+      percentOfLimit,
+      status: percentOfLimit >= 100 ? 'danger' : percentOfLimit >= 80 ? 'warning' : 'ok',
+      subcategories,
+      directValue,
+    };
+  });
+}
+
 export async function getCategoryAlerts(month: Date): Promise<CategoryAlert[]> {
   const breakdown = await getExpensesByCategory(month);
   return breakdown

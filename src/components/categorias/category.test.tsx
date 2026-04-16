@@ -7,12 +7,19 @@ jest.mock('@/server/actions/category', () => ({
   deleteCategory: jest.fn(),
 }));
 
+jest.mock('@/server/actions/subcategory', () => ({
+  createSubcategory: jest.fn(),
+  updateSubcategory: jest.fn(),
+  deleteSubcategory: jest.fn(),
+}));
+
 const category = {
   id: 'cat-1',
   name: 'Alimentação',
   limitPercent: 20,
   color: '#6B7280',
   icon: 'utensils',
+  subcategories: [],
 };
 
 describe('CategoryList', () => {
@@ -48,23 +55,23 @@ describe('CategoryList', () => {
 
   it('opens edit modal when pencil button is clicked', () => {
     render(<CategoryList categories={[category]} />);
-    // buttons: [0]=Nova Categoria, [1]=pencil, [2]=trash
+    // buttons: [0]=Nova Categoria, [1]=chevron expand, [2]=pencil, [3]=trash
     const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[1]);
+    fireEvent.click(buttons[2]);
     expect(screen.getByRole('heading', { name: 'Editar Categoria' })).toBeInTheDocument();
   });
 
   it('opens delete confirmation modal when trash button is clicked', () => {
     render(<CategoryList categories={[category]} />);
     const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[2]);
+    fireEvent.click(buttons[3]);
     expect(screen.getByRole('heading', { name: 'Confirmar exclusão' })).toBeInTheDocument();
   });
 
   it('closes delete modal when cancel is clicked', () => {
     render(<CategoryList categories={[category]} />);
     const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[2]);
+    fireEvent.click(buttons[3]);
     fireEvent.click(screen.getByRole('button', { name: /cancelar/i }));
     expect(screen.queryByRole('heading', { name: 'Confirmar exclusão' })).not.toBeInTheDocument();
   });
@@ -73,7 +80,7 @@ describe('CategoryList', () => {
     const { deleteCategory } = jest.requireMock('@/server/actions/category');
     render(<CategoryList categories={[category]} />);
     const buttons = screen.getAllByRole('button');
-    fireEvent.click(buttons[2]); // open delete modal
+    fireEvent.click(buttons[3]); // open delete modal
     fireEvent.click(screen.getByText('Deletar'));
     await waitFor(() => expect(deleteCategory).toHaveBeenCalledWith('cat-1'));
   });

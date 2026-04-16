@@ -32,6 +32,7 @@ export async function setActiveContext(contextValue: string) {
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
     path: '/',
+    maxAge: 7 * 24 * 60 * 60, // Alinhado com a sessão JWT (7 dias)
   });
 
   redirect('/dashboard');
@@ -98,8 +99,8 @@ export async function getContextPersons(): Promise<ContextPersons> {
 export async function createHouse(name: string) {
   const userId = await requireAuth();
 
-  if (!name || name.trim().length < 2) {
-    throw new Error('O nome da casa deve ter ao menos 2 caracteres.');
+  if (!name || name.trim().length < 2 || name.trim().length > 100) {
+    throw new Error('O nome da casa deve ter entre 2 e 100 caracteres.');
   }
 
   const house = await prisma.house.create({

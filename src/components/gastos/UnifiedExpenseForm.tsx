@@ -14,6 +14,7 @@ import type { UnifiedExpense } from '@/server/actions/expense';
 import { cn, toDateInputValue, resolvePersonFromContext } from '@/lib/utils';
 import { PAYMENT_METHOD_OPTIONS } from '@/lib/constants/payments';
 import type { PaymentMethod } from '@/lib/constants/payments';
+import type { Subcategory } from '@/types';
 
 type Kind = 'none' | 'monthly' | 'installment';
 
@@ -21,6 +22,7 @@ interface Category {
   id: string;
   name: string;
   color: string;
+  subcategories: Subcategory[];
 }
 
 interface Card {
@@ -83,10 +85,15 @@ export function UnifiedExpenseForm({
     description: initial?.description ?? '',
     person: initial?.person ?? '',
     expenseTypeId: initial?.expenseType?.id ?? '',
+    subcategoryId: initial?.subcategoryId ?? '',
     cardId: initial?.cardId ?? cards[0]?.id ?? '',
   });
 
+  const selectedCategory = categories.find((c) => c.id === form.expenseTypeId) ?? null;
+  const availableSubcategories = selectedCategory?.subcategories ?? [];
+
   const categoryOptions = categories.map((c) => ({ value: c.id, label: c.name }));
+  const subcategoryOptions = availableSubcategories.map((s) => ({ value: s.id, label: s.name }));
   const cardOptions = cards.map((c) => ({ value: c.id, label: c.name }));
 
   const handlePaymentMethodChange = (method: PaymentMethod) => {
@@ -119,6 +126,8 @@ export function UnifiedExpenseForm({
       try {
         const person = resolvePersonFromContext(contextPersons, form.person);
 
+        const subcategoryId = form.subcategoryId || undefined;
+
         if (paymentMethod === 'CARD') {
           if (isEditing && initial?.source === 'card') {
             await updateCardExpense(initial.id, {
@@ -128,6 +137,7 @@ export function UnifiedExpenseForm({
               description: form.description || undefined,
               person,
               expenseTypeId: form.expenseTypeId,
+              subcategoryId,
             });
           } else {
             await createCardExpense({
@@ -138,6 +148,7 @@ export function UnifiedExpenseForm({
               description: form.description || undefined,
               person,
               expenseTypeId: form.expenseTypeId,
+              subcategoryId,
               kind,
               installmentCount: kind === 'installment' ? installmentCount : undefined,
             });
@@ -150,6 +161,7 @@ export function UnifiedExpenseForm({
             description: form.description || undefined,
             person,
             expenseTypeId: form.expenseTypeId,
+            subcategoryId,
             paymentMethod,
           };
 
@@ -295,9 +307,19 @@ export function UnifiedExpenseForm({
         options={categoryOptions}
         placeholder="Selecionar categoria"
         value={form.expenseTypeId}
-        onChange={(e) => setForm({ ...form, expenseTypeId: e.target.value })}
+        onChange={(e) => setForm({ ...form, expenseTypeId: e.target.value, subcategoryId: '' })}
         required
       />
+
+      {availableSubcategories.length > 0 && (
+        <Select
+          label="Sub-categoria (opcional)"
+          options={subcategoryOptions}
+          placeholder="Selecionar sub-categoria"
+          value={form.subcategoryId}
+          onChange={(e) => setForm({ ...form, subcategoryId: e.target.value })}
+        />
+      )}
 
       {contextPersons.type === 'house' && (
         <PersonToggle

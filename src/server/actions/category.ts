@@ -31,10 +31,17 @@ export async function updateCategory(id: string, data: UpdateCategoryInput) {
 export async function deleteCategory(id: string) {
   const filter = await getContextFilter();
 
-  const [expenseCount, cardExpenseCount] = await Promise.all([
+  const [expenseCount, cardExpenseCount, subcategoryCount] = await Promise.all([
     prisma.expense.count({ where: { expenseTypeId: id, ...filter } }),
     prisma.cardExpense.count({ where: { expenseTypeId: id, card: filter } }),
+    prisma.subcategory.count({ where: { expenseTypeId: id, ...filter } }),
   ]);
+
+  if (subcategoryCount > 0) {
+    throw new Error(
+      `Não é possível deletar esta categoria pois ela possui ${subcategoryCount} sub-categoria(s) vinculada(s). Remova as sub-categorias antes de deletar.`
+    );
+  }
 
   if (expenseCount > 0 || cardExpenseCount > 0) {
     throw new Error(
@@ -53,5 +60,6 @@ export async function listCategories() {
   return prisma.expenseType.findMany({
     where: filter,
     orderBy: { name: 'asc' },
+    include: { subcategories: { orderBy: { name: 'asc' } } },
   });
 }

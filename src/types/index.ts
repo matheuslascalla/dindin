@@ -1,3 +1,8 @@
+export interface Subcategory {
+  id: string;
+  name: string;
+}
+
 export type {
   DashboardSummary,
   CategoryBreakdown,

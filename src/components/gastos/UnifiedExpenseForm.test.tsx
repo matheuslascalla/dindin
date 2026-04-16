@@ -14,7 +14,7 @@ jest.mock('next/navigation', () => ({
   useRouter: jest.fn(() => ({ push: jest.fn() })),
 }));
 
-const categories = [{ id: 'cat-1', name: 'Alimentação', color: '#6B7280' }];
+const categories = [{ id: 'cat-1', name: 'Alimentação', color: '#6B7280', subcategories: [] }];
 const cards = [{ id: 'card-1', name: 'Nubank' }];
 const contextPersons = {
   type: 'personal' as const,

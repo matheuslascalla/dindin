@@ -10,6 +10,7 @@ jest.mock('@/lib/prisma', () => ({
     },
     expense: { count: jest.fn() },
     cardExpense: { count: jest.fn() },
+    subcategory: { count: jest.fn() },
   },
 }));
 jest.mock('next/cache', () => ({ revalidatePath: jest.fn() }));
@@ -24,6 +25,7 @@ const db = prisma as unknown as {
   expenseType: jest.Mocked<typeof prisma.expenseType>;
   expense: jest.Mocked<typeof prisma.expense>;
   cardExpense: jest.Mocked<typeof prisma.cardExpense>;
+  subcategory: jest.Mocked<typeof prisma.subcategory>;
 };
 
 const FILTER = { userId: 'user-test', houseId: null };
@@ -73,6 +75,7 @@ describe('deleteCategory', () => {
   it('deletes when no expenses are linked', async () => {
     (db.expense.count as jest.Mock).mockResolvedValue(0);
     (db.cardExpense.count as jest.Mock).mockResolvedValue(0);
+    (db.subcategory.count as jest.Mock).mockResolvedValue(0);
 
     await deleteCategory('cat-1');
 
@@ -84,6 +87,7 @@ describe('deleteCategory', () => {
   it('throws when there are regular expenses linked', async () => {
     (db.expense.count as jest.Mock).mockResolvedValue(3);
     (db.cardExpense.count as jest.Mock).mockResolvedValue(0);
+    (db.subcategory.count as jest.Mock).mockResolvedValue(0);
 
     await expect(deleteCategory('cat-1')).rejects.toThrow(/3 gasto\(s\)/);
     expect(db.expenseType.delete).not.toHaveBeenCalled();
@@ -92,6 +96,7 @@ describe('deleteCategory', () => {
   it('throws when there are card expenses linked', async () => {
     (db.expense.count as jest.Mock).mockResolvedValue(0);
     (db.cardExpense.count as jest.Mock).mockResolvedValue(2);
+    (db.subcategory.count as jest.Mock).mockResolvedValue(0);
 
     await expect(deleteCategory('cat-1')).rejects.toThrow(/2 gasto\(s\)/);
     expect(db.expenseType.delete).not.toHaveBeenCalled();
@@ -100,6 +105,7 @@ describe('deleteCategory', () => {
   it('includes combined total in the error message', async () => {
     (db.expense.count as jest.Mock).mockResolvedValue(1);
     (db.cardExpense.count as jest.Mock).mockResolvedValue(4);
+    (db.subcategory.count as jest.Mock).mockResolvedValue(0);
 
     await expect(deleteCategory('cat-1')).rejects.toThrow(/5 gasto\(s\)/);
   });
@@ -115,6 +121,7 @@ describe('listCategories', () => {
     expect(db.expenseType.findMany).toHaveBeenCalledWith({
       where: { ...FILTER },
       orderBy: { name: 'asc' },
+      include: { subcategories: { orderBy: { name: 'asc' } } },
     });
     expect(result).toEqual(categories);
   });

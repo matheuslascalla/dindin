@@ -22,6 +22,12 @@ jest.mock('@/lib/prisma', () => ({
     cardExpense: {
       findMany: jest.fn(),
     },
+    expenseType: {
+      findFirst: jest.fn(),
+    },
+    subcategory: {
+      findFirst: jest.fn(),
+    },
   },
 }));
 jest.mock('next/cache', () => ({ revalidatePath: jest.fn() }));
@@ -31,6 +37,7 @@ jest.mock('@/lib/context', () => ({
 
 const db = prisma.expense as jest.Mocked<typeof prisma.expense>;
 const cardDb = prisma.cardExpense as jest.Mocked<typeof prisma.cardExpense>;
+const categoryDb = prisma.expenseType as jest.Mocked<typeof prisma.expenseType>;
 const FILTER = { userId: 'user-test', houseId: null };
 
 beforeEach(() => jest.clearAllMocks());
@@ -80,6 +87,7 @@ const rawCardExpense = {
 
 describe('createExpense', () => {
   it('creates an expense and revalidates /gastos and /dashboard', async () => {
+    (categoryDb.findFirst as jest.Mock).mockResolvedValue(expenseType);
     (db.create as jest.Mock).mockResolvedValue(createdExpense);
 
     const result = await createExpense(validExpense);
@@ -102,7 +110,7 @@ describe('updateExpense', () => {
 
     expect(db.update).toHaveBeenCalledWith({
       where: { id: 'exp-1', ...FILTER },
-      data: { value: 200 },
+      data: { value: 200, subcategoryId: null },
       include: { expenseType: true },
     });
     expect(revalidatePath).toHaveBeenCalledWith('/gastos');

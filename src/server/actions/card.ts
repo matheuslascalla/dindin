@@ -19,6 +19,7 @@ import type {
   UpdateCardExpenseInput,
 } from '@/lib/validators/card';
 import { utcStartOfMonth, utcEndOfMonth, cardExpenseMonthFilter } from '@/lib/utils';
+import { assertCategoryOwnership } from './_helpers';
 
 function monthFilter(month: Date) {
   return cardExpenseMonthFilter(utcStartOfMonth(month), utcEndOfMonth(month));
@@ -62,11 +63,24 @@ export async function listCards() {
 export async function createCardExpense(data: CreateCardExpenseInput) {
   const validated = CreateCardExpenseSchema.parse(data);
   const filter = await getContextFilter();
-  const { kind, installmentCount, cardId, name, date, description, person, value, expenseTypeId } =
-    validated;
+  const {
+    kind,
+    installmentCount,
+    cardId,
+    name,
+    date,
+    description,
+    person,
+    value,
+    expenseTypeId,
+    subcategoryId,
+  } = validated;
 
-  // Verify the card belongs to the user's context before creating expenses on it
-  const card = await prisma.creditCard.findFirst({ where: { id: cardId, ...filter } });
+  // Verify card ownership and category/subcategory ownership in parallel
+  const [card] = await Promise.all([
+    prisma.creditCard.findFirst({ where: { id: cardId, ...filter } }),
+    assertCategoryOwnership(filter, expenseTypeId, subcategoryId),
+  ]);
   if (!card) throw new Error('Cartão não encontrado.');
 
   if (kind === 'installment') {
@@ -81,6 +95,7 @@ export async function createCardExpense(data: CreateCardExpenseInput) {
         description: description || null,
         person: person || null,
         expenseTypeId,
+        subcategoryId: subcategoryId || null,
         recurrence: 'none',
         installmentTotal: count,
         installmentNumber: i + 1,
@@ -97,6 +112,7 @@ export async function createCardExpense(data: CreateCardExpenseInput) {
         description: description || null,
         person: person || null,
         expenseTypeId,
+        subcategoryId: subcategoryId || null,
         recurrence: kind,
       },
     });
@@ -107,16 +123,18 @@ export async function createCardExpense(data: CreateCardExpenseInput) {
 }
 
 export async function updateCardExpense(id: string, data: UpdateCardExpenseInput) {
-  const validated = UpdateCardExpenseSchema.parse(data);
+  const { subcategoryId, ...rest } = UpdateCardExpenseSchema.parse(data);
   const filter = await getContextFilter();
 
   // Verify ownership before updating
   const existing = await prisma.cardExpense.findFirst({ where: { id, card: filter } });
   if (!existing) throw new Error('Gasto não encontrado.');
 
+  await assertCategoryOwnership(filter, rest.expenseTypeId, subcategoryId);
+
   const expense = await prisma.cardExpense.update({
     where: { id },
-    data: validated,
+    data: { ...rest, subcategoryId: subcategoryId ?? null },
     include: { expenseType: true, card: true },
   });
   revalidatePath('/cartoes');

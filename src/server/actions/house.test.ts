@@ -148,12 +148,12 @@ describe('createHouse', () => {
 
   it('throws when name is empty', async () => {
     mockRequireAuth.mockResolvedValue('u1');
-    await expect(createHouse('')).rejects.toThrow('ao menos 2 caracteres');
+    await expect(createHouse('')).rejects.toThrow('entre 2 e 100 caracteres');
   });
 
   it('throws when name is too short', async () => {
     mockRequireAuth.mockResolvedValue('u1');
-    await expect(createHouse('A')).rejects.toThrow('ao menos 2 caracteres');
+    await expect(createHouse('A')).rejects.toThrow('entre 2 e 100 caracteres');
   });
 });
 

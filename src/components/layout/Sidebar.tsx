@@ -9,6 +9,7 @@ import {
   ShoppingCart,
   CreditCard,
   Tag,
+  BarChart2,
   ArrowLeftRight,
   LogOut,
   UsersRound,
@@ -22,6 +23,7 @@ const navItems = [
   { href: '/rendas', icon: TrendingUp, label: 'Rendas' },
   { href: '/gastos', icon: ShoppingCart, label: 'Gastos' },
   { href: '/cartoes', icon: CreditCard, label: 'Cartões' },
+  { href: '/analise', icon: BarChart2, label: 'Análise' },
   { href: '/categorias', icon: Tag, label: 'Categorias' },
 ];
 

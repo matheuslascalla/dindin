@@ -1,19 +1,22 @@
 import { z } from 'zod';
 
+import { safeDate } from './shared';
+
 export const CreateExpenseSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').max(100),
   value: z.number().positive('Valor deve ser maior que zero'),
-  date: z.coerce.date(),
-  description: z.string().optional(),
-  person: z.string().optional(),
+  date: safeDate,
+  description: z.string().max(500).optional(),
+  person: z.string().max(100).optional(),
   paymentMethod: z.enum(['PIX', 'MONEY']).default('PIX'),
   expenseTypeId: z.string().min(1, 'Categoria é obrigatória'),
+  subcategoryId: z.string().optional(),
 });
 
 export const UpdateExpenseSchema = CreateExpenseSchema.partial();
 
 export const ExpenseFiltersSchema = z.object({
-  month: z.coerce.date().optional(),
+  month: safeDate.optional(),
   expenseTypeId: z.string().optional(),
   person: z.string().optional(),
 });

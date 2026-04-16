@@ -16,6 +16,7 @@ import type { UnifiedExpense } from '@/server/actions/expense';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
 import { PAYMENT_METHOD_CONFIG } from '@/lib/constants/payments';
 import type { PaymentMethod } from '@/lib/constants/payments';
+import type { Subcategory } from '@/types';
 import { UnifiedExpenseForm } from './UnifiedExpenseForm';
 import { ExpenseFilters } from './ExpenseFilters';
 import { ExpensePagination } from './ExpensePagination';
@@ -24,6 +25,7 @@ interface Category {
   id: string;
   name: string;
   color: string;
+  subcategories: Subcategory[];
 }
 
 interface Card {

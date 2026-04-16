@@ -20,6 +20,7 @@ model User {
   cards            CreditCard[]
   expenses         Expense[]
   categories       ExpenseType[]
+  subcategories    Subcategory[]
   houseInvitesSent HouseInvite[] @relation("InvitedBy")
   houseMembers     HouseMember[]
   incomes          Income[]
@@ -52,17 +53,18 @@ model VerificationToken {
 }
 
 model House {
-  id         String        @id @default(cuid())
-  name       String
-  inviteCode String        @unique @default(cuid())
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
-  cards      CreditCard[]
-  expenses   Expense[]
-  categories ExpenseType[]
-  invites    HouseInvite[]
-  members    HouseMember[]
-  incomes    Income[]
+  id            String        @id @default(cuid())
+  name          String
+  inviteCode    String        @unique @default(cuid())
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  cards         CreditCard[]
+  expenses      Expense[]
+  categories    ExpenseType[]
+  subcategories Subcategory[]
+  invites       HouseInvite[]
+  members       HouseMember[]
+  incomes       Income[]
 }
 
 model HouseMember {
@@ -106,37 +108,40 @@ model Income {
 }
 
 model ExpenseType {
-  id           String        @id @default(cuid())
-  name         String
-  limitPercent Float
-  color        String
-  icon         String
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  userId       String?
-  houseId      String?
-  cardExpenses CardExpense[]
-  expenses     Expense[]
-  house        House?        @relation(fields: [houseId], references: [id], onDelete: Cascade)
-  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String        @id @default(cuid())
+  name          String
+  limitPercent  Float
+  color         String
+  icon          String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  userId        String?
+  houseId       String?
+  cardExpenses  CardExpense[]
+  expenses      Expense[]
+  subcategories Subcategory[]
+  house         House?        @relation(fields: [houseId], references: [id], onDelete: Cascade)
+  user          User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Expense {
-  id            String      @id @default(cuid())
-  name          String
-  value         Float
-  date          DateTime
-  description   String?
-  person        String?
-  paymentMethod String      @default("PIX")
-  expenseTypeId String
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  userId        String?
-  houseId       String?
-  expenseType   ExpenseType @relation(fields: [expenseTypeId], references: [id])
-  house         House?      @relation(fields: [houseId], references: [id], onDelete: Cascade)
-  user          User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String       @id @default(cuid())
+  name            String
+  value           Float
+  date            DateTime
+  description     String?
+  person          String?
+  paymentMethod   String       @default("PIX")
+  expenseTypeId   String
+  subcategoryId   String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  userId          String?
+  houseId         String?
+  expenseType     ExpenseType  @relation(fields: [expenseTypeId], references: [id])
+  subcategory     Subcategory? @relation(fields: [subcategoryId], references: [id])
+  house           House?       @relation(fields: [houseId], references: [id], onDelete: Cascade)
+  user            User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model CreditCard {
@@ -153,7 +158,7 @@ model CreditCard {
 }
 
 model CardExpense {
-  id                 String      @id @default(cuid())
+  id                 String       @id @default(cuid())
   cardId             String
   name               String
   date               DateTime
@@ -161,12 +166,29 @@ model CardExpense {
   person             String?
   value              Float
   expenseTypeId      String
-  recurrence         String      @default("none")
+  subcategoryId      String?
+  recurrence         String       @default("none")
   installmentTotal   Int?
   installmentNumber  Int?
   installmentGroupId String?
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
-  card               CreditCard  @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  expenseType        ExpenseType @relation(fields: [expenseTypeId], references: [id])
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  card               CreditCard   @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  expenseType        ExpenseType  @relation(fields: [expenseTypeId], references: [id])
+  subcategory        Subcategory? @relation(fields: [subcategoryId], references: [id])
+}
+
+model Subcategory {
+  id            String        @id @default(cuid())
+  name          String
+  expenseTypeId String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  userId        String?
+  houseId       String?
+  expenseType   ExpenseType   @relation(fields: [expenseTypeId], references: [id])
+  expenses      Expense[]
+  cardExpenses  CardExpense[]
+  house         House?        @relation(fields: [houseId], references: [id], onDelete: Cascade)
+  user          User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

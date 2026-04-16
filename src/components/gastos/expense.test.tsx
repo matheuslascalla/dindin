@@ -18,7 +18,7 @@ jest.mock('next/navigation', () => ({
   useSearchParams: jest.fn(() => ({ toString: () => '' })),
 }));
 
-const categories = [{ id: 'cat-1', name: 'Alimentação', color: '#6B7280' }];
+const categories = [{ id: 'cat-1', name: 'Alimentação', color: '#6B7280', subcategories: [] }];
 
 const contextPersons = {
   type: 'personal' as const,

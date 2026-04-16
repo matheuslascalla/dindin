@@ -7,6 +7,7 @@ import { getContextFilter } from '@/lib/context';
 import { CreateExpenseSchema, UpdateExpenseSchema } from '@/lib/validators/expense';
 import type { CreateExpenseInput, UpdateExpenseInput } from '@/lib/validators/expense';
 import { utcStartOfMonth, utcEndOfMonth, cardExpenseMonthFilter } from '@/lib/utils';
+import { assertCategoryOwnership } from './_helpers';
 
 export type UnifiedExpense = {
   id: string;
@@ -16,6 +17,8 @@ export type UnifiedExpense = {
   description?: string | null;
   person?: string | null;
   expenseType: { id: string; name: string; color: string; icon: string };
+  subcategoryId?: string | null;
+  subcategoryName?: string | null;
   source: 'expense' | 'card';
   paymentMethod?: 'PIX' | 'MONEY';
   cardId?: string;
@@ -26,9 +29,13 @@ export type UnifiedExpense = {
   installmentGroupId?: string | null;
 };
 
+const SAFE_MAX_ROWS = 2000;
+
 export async function createExpense(data: CreateExpenseInput) {
   const validated = CreateExpenseSchema.parse(data);
   const filter = await getContextFilter();
+
+  await assertCategoryOwnership(filter, validated.expenseTypeId, validated.subcategoryId);
 
   const expense = await prisma.expense.create({
     data: { ...validated, ...filter },
@@ -40,12 +47,14 @@ export async function createExpense(data: CreateExpenseInput) {
 }
 
 export async function updateExpense(id: string, data: UpdateExpenseInput) {
-  const validated = UpdateExpenseSchema.parse(data);
+  const { subcategoryId, ...rest } = UpdateExpenseSchema.parse(data);
   const filter = await getContextFilter();
+
+  await assertCategoryOwnership(filter, rest.expenseTypeId, subcategoryId);
 
   const expense = await prisma.expense.update({
     where: { id, ...filter },
-    data: validated,
+    data: { ...rest, subcategoryId: subcategoryId ?? null },
     include: { expenseType: true },
   });
   revalidatePath('/gastos');
@@ -81,7 +90,14 @@ export async function listAllExpenses(params: {
   page?: number;
   pageSize?: number;
 }): Promise<{ items: UnifiedExpense[]; total: number; totalValue: number; pageCount: number }> {
-  const { month, categoryId, paymentMethod, person, page = 1, pageSize = 10 } = params;
+  const rawPage = params.page ?? 1;
+  const rawPageSize = params.pageSize ?? 10;
+
+  // Guards against client-side state bugs (negative page, oversized pageSize)
+  const page = Math.max(1, Math.floor(rawPage));
+  const pageSize = Math.min(100, Math.max(1, Math.floor(rawPageSize)));
+
+  const { month, categoryId, paymentMethod, person } = params;
   const filter = await getContextFilter();
 
   const start = month ? utcStartOfMonth(month) : utcStartOfMonth(new Date());
@@ -100,8 +116,9 @@ export async function listAllExpenses(params: {
             ...(paymentMethod ? { paymentMethod } : {}),
             ...(person ? { person } : {}),
           },
-          include: { expenseType: true },
+          include: { expenseType: true, subcategory: true },
           orderBy: { date: 'desc' },
+          take: SAFE_MAX_ROWS,
         })
       : Promise.resolve([]),
 
@@ -115,9 +132,11 @@ export async function listAllExpenses(params: {
           },
           include: {
             expenseType: true,
+            subcategory: true,
             card: { select: { id: true, name: true } },
           },
           orderBy: { date: 'desc' },
+          take: SAFE_MAX_ROWS,
         })
       : Promise.resolve([]),
   ]);
@@ -135,6 +154,8 @@ export async function listAllExpenses(params: {
       color: e.expenseType.color,
       icon: e.expenseType.icon,
     },
+    subcategoryId: e.subcategoryId,
+    subcategoryName: e.subcategory?.name ?? null,
     source: 'expense',
     paymentMethod: e.paymentMethod as 'PIX' | 'MONEY',
   }));
@@ -152,6 +173,8 @@ export async function listAllExpenses(params: {
       color: ce.expenseType.color,
       icon: ce.expenseType.icon,
     },
+    subcategoryId: ce.subcategoryId,
+    subcategoryName: ce.subcategory?.name ?? null,
     source: 'card',
     cardId: ce.card.id,
     cardName: ce.card.name,
