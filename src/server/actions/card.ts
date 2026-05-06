@@ -86,11 +86,12 @@ export async function createCardExpense(data: CreateCardExpenseInput) {
   if (kind === 'installment') {
     const groupId = randomUUID();
     const count = installmentCount ?? 1;
+    const installmentValue = Math.round((value / count) * 100) / 100;
     await prisma.cardExpense.createMany({
       data: Array.from({ length: count }, (_, i) => ({
         cardId,
         name,
-        value,
+        value: installmentValue,
         date: addMonths(date, i),
         description: description || null,
         person: person || null,
