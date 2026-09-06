@@ -2,6 +2,15 @@
 
 Aplicacao web para controle financeiro pessoal e familiar. Permite registrar fontes de renda, organizar gastos por categoria com limites percentuais configuráveis, gerenciar transacoes de cartao de crédito e visualizar tudo em um dashboard intuitivo.
 
+## Sobre o projeto
+
+Este projeto foi construído quase inteiramente com o [Claude Code](https://claude.com/claude-code), com dois objetivos:
+
+1. **Resolver um problema pessoal** — eu precisava de uma ferramenta simples para organizar minhas próprias finanças (rendas, gastos por categoria e cartão de crédito), sem depender de planilhas ou apps de terceiros.
+2. **Estudar o uso de agentes de IA no desenvolvimento de software** — o repositório serve como estudo de caso de como conduzir um projeto real (arquitetura, regras de negócio, testes, CI/CD) usando Claude Code como principal ferramenta de implementação.
+
+O código é disponibilizado publicamente para fins de estudo e portfólio. Fique à vontade para explorar, sugerir melhorias ou usar como referência — mas tenha em mente que decisões de arquitetura e negócio foram guiadas por mim e implementadas com apoio de IA, não o contrário.
+
 ## Funcionalidades
 
 - **Dashboard** — visao geral de receitas, despesas do mes e saldo mensal com alertas visuais por categoria
